@@ -138,10 +138,24 @@ def stream_chat_with_rag(
     rag_results: list[dict],
     image_data_url: str | None = None,
     response_length: str = "extend",
+    parent_context: str = "",
 ):
-    """Stream AI response tokens using RAG context. Yields str chunks."""
+    """Stream AI response tokens using RAG context. Yields str chunks.
+
+    parent_context: the Q&A from the source node that spawned this sub-topic,
+    injected verbatim so the AI always has that grounding context.
+    """
     context_parts = [item["document"] for item in rag_results]
-    context = "\n---\n".join(context_parts) if context_parts else ""
+    rag_context = "\n---\n".join(context_parts) if context_parts else ""
+
+    # Build final context: parent node Q&A first (highest priority), then RAG hits
+    if parent_context and rag_context:
+        context = f"【当前子专题的直接来源节点】\n{parent_context}\n\n---\n\n【相关学习记录（RAG）】\n{rag_context}"
+    elif parent_context:
+        context = f"【当前子专题的直接来源节点】\n{parent_context}"
+    else:
+        context = rag_context
+
     base = RAG_SYSTEM_PROMPT if context else DEFAULT_SYSTEM_PROMPT
 
     client = get_ai_client()

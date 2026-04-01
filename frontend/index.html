@@ -395,6 +395,21 @@
         }
         .action-btn:hover { background: var(--bg-hover); color: var(--text-secondary); }
         .action-btn svg { width: 12px; height: 12px; }
+        .btn-extend {
+            margin-left: auto;
+            color: var(--accent) !important;
+            border: 1px solid rgba(45,212,191,0.22);
+            border-radius: 7px;
+            padding: 3px 11px !important;
+            font-size: 11.5px !important;
+            font-weight: 500;
+        }
+        .btn-extend:hover {
+            background: rgba(45,212,191,0.09) !important;
+            color: var(--accent-light) !important;
+            border-color: rgba(45,212,191,0.45) !important;
+        }
+        .btn-extend.loading { opacity: 0.55; cursor: wait; }
 
         /* ═══════════════════ THINKING ANIMATION ═══════════════════ */
         .thinking-indicator {
@@ -1604,6 +1619,12 @@ function buildMessageGroupHTML(n) {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
                     复制
                 </button>
+                <button class="action-btn btn-extend" onclick="continueExtend(this)"
+                        data-node-id="${n.id}"
+                        data-question="${escapeHtml(n.question).slice(0,200)}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/><line x1="4" y1="12" x2="15" y2="12"/></svg>
+                    继续延伸
+                </button>
             </div>
         </div>
     </div>`;
@@ -1718,6 +1739,12 @@ async function streamAsk(topicId, question, container, nodesList, onDone, imageU
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
                                 复制
                             </button>
+                            <button class="action-btn btn-extend" onclick="continueExtend(this)"
+                                    data-node-id="${data.node.id}"
+                                    data-question="${escapeHtml(question).slice(0,200)}">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/><line x1="4" y1="12" x2="15" y2="12"/></svg>
+                                继续延伸
+                            </button>
                         </div>`);
                     renderLatex(aiEl);
                     container.scrollTop = container.scrollHeight;
@@ -1742,6 +1769,9 @@ async function askQuestion() {
     const input = document.getElementById('questionInput');
     let question = input.value.trim();
     if ((!question && !attachedImageUrl) || !currentTopicId) return;
+
+    // A new main-panel question supersedes the current child sub-topic
+    closeSubPanel();
     if (!question) question = '请描述一下这张图片中的内容。';
 
     if (attachedFileText) {
@@ -1869,6 +1899,56 @@ async function deepDiveSelected() {
         isAskingSub = true;
         await streamAsk(subTopic.id, q, document.getElementById('subPanelMessages'), subNodes);
         isAskingSub = false;
+    }
+}
+
+// ─── "继续延伸" button handler ───────────────────────────────────────────────
+// Opens a new child sub-topic linked to the specific Q&A node,
+// then shows the right panel and focuses its input for the user to ask.
+async function continueExtend(btn) {
+    const nodeId   = parseInt(btn.dataset.nodeId);
+    const question = btn.dataset.question || '';
+    if (!nodeId || !currentTopicId) return;
+
+    btn.classList.add('loading');
+    btn.disabled = true;
+    const origHTML = btn.innerHTML;
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> 创建中…`;
+
+    try {
+        // Generate concise sub-topic title from the parent question
+        let subName;
+        try {
+            const r = await api('/api/generate-title', 'POST', { text: question });
+            subName = r.title || question.slice(0, 15);
+        } catch {
+            subName = question.slice(0, 15);
+        }
+
+        // Create child sub-topic under the current topic, anchored to this node
+        const subTopic = await api('/api/topics', 'POST', {
+            name: subName,
+            parent_id: currentTopicId,
+            source_node_id: nodeId,
+        });
+
+        expandedTopics.add(currentTopicId);
+        await loadTopics();
+        childTopics = allTopics.filter(t => t.parent_id === currentTopicId);
+        renderChildTabs();
+        await switchChild(subTopic.id, subTopic.name);
+
+        // Focus sub-panel input so user can immediately start typing
+        setTimeout(() => {
+            const input = document.getElementById('subPanelInput');
+            if (input) { input.focus(); input.scrollIntoView({ block: 'nearest' }); }
+        }, 350);
+    } catch (e) {
+        console.error('continueExtend:', e);
+    } finally {
+        btn.classList.remove('loading');
+        btn.disabled = false;
+        btn.innerHTML = origHTML;
     }
 }
 
@@ -2166,7 +2246,11 @@ function switchTab(tab) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
     document.getElementById('panelChat').classList.toggle('active', tab === 'chat');
     document.getElementById('panelTree').classList.toggle('active', tab === 'tree');
-    if (tab === 'tree') renderTree();
+    if (tab === 'tree') {
+        // Close sub-panel so the tree gets full width
+        closeSubPanel();
+        renderTree();
+    }
 }
 
 function resetTreeView() {

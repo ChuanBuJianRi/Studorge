@@ -114,10 +114,28 @@ def ask_question_stream(body: AskQuestion):
     """Stream AI response as Server-Sent Events, then persist to DB."""
     rag_results = search_rag(body.question, topic_id=body.topic_id)
 
+    # If this topic was spawned from a specific Q&A node, fetch that node's
+    # question + answer and inject it as explicit context so the AI always
+    # has the parent knowledge as grounding (not just RAG probabilistic recall).
+    parent_context = ""
+    conn = get_db()
+    topic_row = conn.execute("SELECT source_node_id FROM topics WHERE id = ?", (body.topic_id,)).fetchone()
+    if topic_row and topic_row[0]:
+        src_node = conn.execute("SELECT question, answer FROM nodes WHERE id = ?", (topic_row[0],)).fetchone()
+        if src_node:
+            q, a = src_node[0], src_node[1]
+            # Truncate answer to ~1200 chars to keep context manageable
+            a_preview = a[:1200] + ("…" if len(a) > 1200 else "")
+            parent_context = f"问题：{q}\n\n回答：{a_preview}"
+    conn.close()
+
     def generate():
         full_answer = ""
         try:
-            for token in stream_chat_with_rag(body.question, rag_results, body.image_data_url, body.response_length):
+            for token in stream_chat_with_rag(
+                body.question, rag_results, body.image_data_url,
+                body.response_length, parent_context=parent_context,
+            ):
                 full_answer += token
                 yield f"data: {json.dumps({'token': token})}\n\n"
         except Exception as exc:
