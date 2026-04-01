@@ -1,4 +1,4 @@
-# Effstudy
+# Studorge
 
 A **local AI learning workspace** built with **FastAPI** and any **OpenAI-compatible API**. Organize study as **topics** and a **tree of Q&A nodes**, add **per-topic RAG** with **ChromaDB**, and use **streaming** replies, **file import**, **speech-to-text**, and **TTS**.
 
