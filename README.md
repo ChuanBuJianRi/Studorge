@@ -1,27 +1,27 @@
 # Effstudy
 
-基于 **FastAPI** 与 **OpenAI 兼容 API** 的本地智能学习工作台：用专题与树状节点组织问答，结合 **ChromaDB** 做按专题的 **RAG 检索**，支持流式输出、文件导入、语音转写与 TTS。
+A **local AI learning workspace** built with **FastAPI** and any **OpenAI-compatible API**. Organize study as **topics** and a **tree of Q&A nodes**, add **per-topic RAG** with **ChromaDB**, and use **streaming** replies, **file import**, **speech-to-text**, and **TTS**.
 
-## 功能概览
+## Features
 
-| 能力 | 说明 |
-|------|------|
-| 专题与子专题 | 多层级主题，可从某条问答「深挖」新建子专题 |
-| 树状学习节点 | 问答以父子节点组织，可生成简短标题便于浏览 |
-| RAG | 将历史问答写入向量库，新提问时自动检索相关上下文 |
-| 流式回答 | SSE 流式输出，结束后写入数据库并更新向量索引 |
-| 多模态与媒体 | 支持图片（vision）输入；上传 PDF / 文本提取正文；Whisper 转写；OpenAI TTS 朗读 |
-| API 配置 | 环境变量或应用内设置（密钥仅存本地 SQLite，**勿提交仓库**） |
+| Feature | Description |
+|--------|----------------|
+| Topics & subtopics | Nested themes; spin off a subtopic from any Q&A node |
+| Tree-shaped nodes | Parent/child Q&A; short titles for easier navigation |
+| RAG | Past Q&A is embedded; new questions retrieve relevant context |
+| Streaming | Server-Sent Events (SSE); persisted to SQLite and indexed after completion |
+| Multimodal & media | Image (vision) input; PDF/text extraction; Whisper transcription; OpenAI TTS |
+| API configuration | Environment variables or in-app settings (secrets stay in local SQLite—**never commit them**) |
 
-## 技术栈
+## Stack
 
-- **后端**：Python 3、FastAPI、Uvicorn、SQLite（`data/learning.db`）、ChromaDB（`data/chroma_db`）
-- **AI**：`openai` 官方 SDK（兼容自定义 `base_url` / 模型名）
-- **前端**：静态页面（由 FastAPI 挂载 `frontend/`）
+- **Backend**: Python 3, FastAPI, Uvicorn, SQLite (`data/learning.db`), ChromaDB (`data/chroma_db`)
+- **AI**: Official `openai` Python SDK (custom `base_url` and model names supported)
+- **Frontend**: Static assets served from `frontend/`
 
-## 快速开始
+## Quick start
 
-### 1. 克隆与依赖
+### 1. Clone and install
 
 ```bash
 git clone https://github.com/ChuanBuJianRi/Effstudy.git
@@ -31,65 +31,63 @@ source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 2. 配置 API（不要提交密钥）
-
-复制示例环境文件并编辑：
+### 2. Configure the API (do not commit secrets)
 
 ```bash
 cp .env.example .env
 ```
 
-在 `.env` 中填写（也可在网页「设置」里配置，会写入本地数据库）：
+Edit `.env` (or use the in-app **Settings** UI, which stores values in the local database):
 
-- `OPENAI_API_KEY`：API 密钥  
-- `OPENAI_BASE_URL`：例如 `https://api.openai.com/v1` 或其它兼容端点  
-- `OPENAI_MODEL`：例如 `gpt-4o`  
+- `OPENAI_API_KEY` — your API key  
+- `OPENAI_BASE_URL` — e.g. `https://api.openai.com/v1` or another compatible endpoint  
+- `OPENAI_MODEL` — e.g. `gpt-4o`  
 
-**安全提示**
+**Security**
 
-- 仓库已 `.gitignore` 忽略 `.env`、`data/` 等；请勿将含真实密钥的 `.env` 或数据库目录提交到 Git。  
-- 若曾误提交密钥，请在服务商控制台**轮换密钥**，并从 Git 历史中清理敏感文件。
+- `.gitignore` excludes `.env`, `data/`, and similar paths. Do not commit real keys or local databases.  
+- If a key was ever committed, **rotate it** in the provider dashboard and remove it from Git history (e.g. `git filter-repo`).
 
-### 3. 启动
+### 3. Run
 
-在项目根目录执行：
+From the repository root:
 
 ```bash
 python run.py
 ```
 
-浏览器访问：<http://127.0.0.1:8000/>
+Open <http://127.0.0.1:8000/> in your browser.
 
-## 项目结构
+## Project layout
 
 ```
 Effstudy/
-├── backend/           # FastAPI 应用、数据库、RAG、AI 客户端
-├── frontend/          # 静态前端（index.html 等）
-├── data/              # 本地生成：SQLite + Chroma（默认已忽略，不进入版本库）
-├── run.py             # 启动入口
+├── backend/           # FastAPI app, DB, RAG, AI client
+├── frontend/          # Static UI (e.g. index.html)
+├── data/              # Generated locally: SQLite + Chroma (gitignored)
+├── run.py             # Dev entrypoint
 ├── requirements.txt
-├── .env.example       # 环境变量模板（无真实密钥）
+├── .env.example       # Template only (no real secrets)
 └── README.md
 ```
 
-## 常用 API（节选）
+## API overview
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/` | 前端页面 |
-| GET/POST | `/api/topics` | 专题列表与创建 |
-| POST | `/api/ask`、`/api/ask/stream` | 提问（普通 / 流式） |
-| GET | `/api/topics/{id}/tree`、`/full-tree` | 专题节点树 |
-| POST | `/api/upload` | PDF / 文本上传提取 |
-| POST | `/api/transcribe` | 语音转文字 |
-| POST | `/api/tts` | 文字转语音 |
-| GET/POST | `/api/settings` | 读取 / 更新 API 相关设置 |
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | `/` | Web UI |
+| GET/POST | `/api/topics` | List / create topics |
+| POST | `/api/ask`, `/api/ask/stream` | Ask (sync / streaming) |
+| GET | `/api/topics/{id}/tree`, `/full-tree` | Topic node trees |
+| POST | `/api/upload` | PDF / text upload and extraction |
+| POST | `/api/transcribe` | Speech to text |
+| POST | `/api/tts` | Text to speech |
+| GET/POST | `/api/settings` | Read / update API-related settings |
 
-## 许可证
+## License
 
-若未另行指定，以仓库内许可证文件为准；若无许可证文件，使用前请与作者确认。
+If no `LICENSE` file is present in the repository, contact the author before redistributing.
 
-## 贡献与反馈
+## Contributing
 
-欢迎通过 Issue / Pull Request 交流。提交代码前请确认未包含 `.env`、`data/` 或个人密钥。
+Issues and pull requests are welcome. Before pushing, confirm you are not including `.env`, `data/`, or personal API keys.
