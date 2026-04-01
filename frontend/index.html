@@ -1,0 +1,2593 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studorge - 智能学习系统</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #08090d;
+            --bg-secondary: #0c0e16;
+            --bg-tertiary: #111420;
+            --bg-card: #161826;
+            --bg-hover: #1c1f2e;
+            --bg-active: rgba(45, 212, 191, 0.08);
+            --border: rgba(255,255,255,0.05);
+            --border-light: rgba(255,255,255,0.09);
+            --text-primary: #eef0f5;
+            --text-secondary: #8890a8;
+            --text-tertiary: #4e5368;
+            --accent: #2dd4bf;
+            --accent-light: #5eead4;
+            --accent-dim: #1a9e8e;
+            --accent-glow: rgba(45, 212, 191, 0.18);
+            --warm: #f4a261;
+            --red: #f87171;
+            --green: #4ade80;
+            --shadow-lg: 0 24px 64px rgba(0,0,0,0.6);
+            --radius: 10px;
+            --radius-lg: 14px;
+            --radius-xl: 18px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ═══════════════════ SIDEBAR ═══════════════════ */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            min-height: 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .sidebar-header {
+            padding: 18px 16px 14px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        .logo-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 9px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .logo-icon svg { width: 100%; height: 100%; display: block; }
+
+        .logo h1 { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+        .logo span { font-size: 10px; color: var(--text-tertiary); display: block; margin-top: 1px; }
+
+        .new-topic-row { display: flex; gap: 7px; }
+
+        .input-base {
+            padding: 8px 12px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 12px;
+            font-family: inherit;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .input-base:focus { border-color: var(--accent-dim); box-shadow: 0 0 0 2px var(--accent-glow); }
+        .input-base::placeholder { color: var(--text-tertiary); }
+        .new-topic-row .input-base { flex: 1; }
+
+        .btn {
+            padding: 8px 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            font-family: inherit;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .btn-primary { background: var(--accent-dim); color: #041210; font-weight: 600; }
+        .btn-primary:hover { background: var(--accent); }
+        .btn-ghost { background: var(--bg-hover); color: var(--text-secondary); border: 1px solid var(--border-light); }
+        .btn-ghost:hover { background: var(--bg-card); color: var(--text-primary); }
+        .btn-danger { background: rgba(248,113,113,0.08); color: var(--red); border: 1px solid rgba(248,113,113,0.15); }
+        .btn-danger:hover { background: rgba(248,113,113,0.15); }
+        .btn-small { padding: 5px 10px; font-size: 11px; border-radius: 6px; }
+
+        /* Topic list */
+        .topic-list {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 8px;
+        }
+
+        .topic-list-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--text-tertiary);
+            padding: 6px 8px 8px;
+        }
+
+        .topic-item {
+            padding: 9px 10px;
+            border-radius: 7px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            transition: all 0.15s;
+            position: relative;
+            user-select: none;
+        }
+        .topic-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .topic-item.active { background: var(--bg-active); color: var(--accent-light); }
+        .topic-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 50%; transform: translateY(-50%);
+            width: 3px; height: 16px;
+            background: var(--accent);
+            border-radius: 0 3px 3px 0;
+        }
+
+        .topic-icon {
+            width: 22px; height: 22px;
+            border-radius: 6px;
+            background: var(--bg-card);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; font-weight: 700;
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+        .topic-item.active .topic-icon { background: rgba(45,212,191,0.12); }
+
+        .topic-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .topic-expand-btn {
+            background: none; border: none;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            font-size: 9px;
+            padding: 3px;
+            border-radius: 4px;
+            transition: all 0.15s;
+            flex-shrink: 0;
+            line-height: 1;
+            width: 18px; height: 18px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .topic-expand-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .topic-expand-btn.expanded { transform: rotate(90deg); }
+
+        .topic-delete-btn {
+            opacity: 0;
+            background: none; border: none;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: all 0.15s;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+        .topic-item:hover .topic-delete-btn { opacity: 1; }
+        .topic-delete-btn:hover { color: var(--red); }
+
+        .topic-children { overflow: hidden; }
+
+        /* Sub-topics indented */
+        .topic-item.sub-topic {
+            font-size: 11.5px;
+            color: var(--text-tertiary);
+        }
+        .topic-item.sub-topic:hover { color: var(--text-secondary); }
+        .topic-item.sub-topic.sub-active { color: var(--accent); background: var(--bg-active); }
+
+        /* RAG section */
+        .rag-section {
+            padding: 12px 14px;
+            border-top: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .rag-section .section-label {
+            font-size: 10px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 1.2px;
+            color: var(--text-tertiary); margin-bottom: 7px;
+        }
+        .rag-input-row { display: flex; gap: 5px; }
+        .rag-input-row .input-base { flex: 1; padding: 6px 10px; }
+
+        /* ═══════════════════ MAIN ═══════════════════ */
+        .main {
+            flex: 1;
+            min-width: 0;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg-primary);
+            position: relative;
+        }
+
+        .btn-settings {
+            position: absolute; top: 10px; right: 14px; z-index: 20;
+            padding: 6px 12px;
+            background: var(--bg-tertiary);
+            color: var(--text-tertiary);
+            border: 1px solid var(--border-light);
+            border-radius: 7px;
+            font-size: 11px; font-weight: 500; font-family: inherit;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .btn-settings:hover { background: var(--bg-hover); color: var(--text-secondary); border-color: var(--accent-dim); }
+
+        .tab-bar {
+            display: flex;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 0 18px;
+            gap: 2px;
+            flex-shrink: 0;
+        }
+        .tab-btn {
+            padding: 11px 16px;
+            background: none; border: none;
+            color: var(--text-tertiary);
+            cursor: pointer; font-size: 12px; font-weight: 500;
+            font-family: inherit;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab-btn:hover { color: var(--text-secondary); }
+        .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+        /* Panels */
+        .content { flex: 1; min-height: 0; display: flex; overflow: hidden; }
+        .panel { display: none; flex: 1; min-width: 0; min-height: 0; flex-direction: column; }
+        .panel.active { display: flex; }
+
+        /* ═══════════════════ CHAT PANEL ═══════════════════ */
+        .chat-panel {
+            display: flex; flex-direction: column;
+            flex: 1; min-height: 0; overflow: hidden;
+        }
+
+        .chat-messages {
+            flex: 1; min-height: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            padding: 28px 28px 8px;
+            display: flex; flex-direction: column; gap: 20px;
+        }
+
+        .message-group { max-width: 740px; width: 100%; margin: 0 auto; }
+
+        .message-user-wrap { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: var(--radius);
+            font-size: 14px;
+            line-height: 1.75;
+        }
+
+        .message-user {
+            background: linear-gradient(135deg, var(--accent-dim), #0f7a6e);
+            color: #e0faf7;
+            border-radius: var(--radius) var(--radius) 4px var(--radius);
+            max-width: 72%;
+            font-size: 13.5px;
+        }
+
+        .message-ai {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px var(--radius) var(--radius) var(--radius);
+            position: relative;
+        }
+
+        .message-ai-label { display: none; }
+
+        .message-ai pre {
+            background: var(--bg-primary);
+            padding: 12px; border-radius: 8px;
+            overflow-x: auto; margin: 8px 0;
+            border: 1px solid var(--border);
+        }
+        .message-ai code { font-family: 'SF Mono','JetBrains Mono','Fira Code',monospace; font-size: 12.5px; }
+        .message-ai p { margin: 6px 0; }
+        .message-ai p:first-child { margin-top: 0; }
+        .message-ai p:last-child { margin-bottom: 0; }
+        .message-ai ul, .message-ai ol { padding-left: 20px; margin: 6px 0; }
+        .message-ai li { margin: 3px 0; }
+        .message-ai h1,.message-ai h2,.message-ai h3,.message-ai h4 { margin: 14px 0 6px; }
+        .message-ai strong { color: var(--accent-light); }
+        .message-ai blockquote { border-left: 3px solid var(--accent); padding-left: 12px; margin: 8px 0; color: var(--text-secondary); }
+        .message-ai table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 13px; }
+        .message-ai th,.message-ai td { border: 1px solid var(--border-light); padding: 6px 10px; }
+        .message-ai th { background: var(--bg-tertiary); color: var(--text-primary); }
+
+        /* Message actions row */
+        .message-actions {
+            display: flex; align-items: center; gap: 8px;
+            margin-top: 10px; padding-top: 8px;
+            border-top: 1px solid var(--border);
+            opacity: 0; transition: opacity 0.15s;
+        }
+        .message-ai:hover .message-actions { opacity: 1; }
+        .action-btn {
+            background: none; border: none;
+            color: var(--text-tertiary);
+            cursor: pointer; font-size: 11px;
+            padding: 3px 7px; border-radius: 5px;
+            transition: all 0.15s; display: flex; align-items: center; gap: 4px;
+        }
+        .action-btn:hover { background: var(--bg-hover); color: var(--text-secondary); }
+        .action-btn svg { width: 12px; height: 12px; }
+
+        /* ═══════════════════ THINKING ANIMATION ═══════════════════ */
+        .thinking-indicator {
+            display: flex; align-items: center; gap: 10px;
+            padding: 4px 0;
+        }
+        .thinking-orb {
+            width: 20px; height: 20px;
+            border-radius: 50%;
+            position: relative; flex-shrink: 0;
+        }
+        .thinking-orb::before {
+            content: '';
+            position: absolute; inset: 0;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, var(--accent) 0%, var(--accent-glow) 40%, transparent 60%, var(--accent) 100%);
+            animation: thinkSpin 1s linear infinite;
+        }
+        .thinking-orb::after {
+            content: '';
+            position: absolute; inset: 3px;
+            border-radius: 50%;
+            background: var(--bg-card);
+        }
+        @keyframes thinkSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .thinking-text {
+            font-size: 13px; color: var(--text-tertiary);
+            animation: thinkPulse 1.4s ease-in-out infinite;
+        }
+        @keyframes thinkPulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+        /* Streaming cursor */
+        .stream-cursor {
+            display: inline-block;
+            width: 2px; height: 1em;
+            background: var(--accent);
+            margin-left: 1px;
+            vertical-align: text-bottom;
+            animation: cursorBlink 0.65s step-end infinite;
+        }
+        @keyframes cursorBlink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+        /* Chat node: flash 3 times then stop */
+        @keyframes nodeFlash {
+            0%, 100% { box-shadow: none; }
+            50%      { box-shadow: 0 0 0 3px rgba(45,212,191,1), 0 0 20px rgba(45,212,191,0.55), 0 0 40px rgba(45,212,191,0.2); }
+        }
+        .node-flash {
+            animation: nodeFlash 0.6s ease-in-out 3;
+            border-radius: 10px;
+        }
+
+        /* Knowledge tree: current node persistent pulse ring */
+        @keyframes treePulse {
+            0%, 100% { stroke-opacity: 0.35; }
+            50%      { stroke-opacity: 1; }
+        }
+        .tree-pulse-ring { animation: treePulse 1.4s ease-in-out infinite; }
+
+        /* ═══════════════════ CHAT INPUT ═══════════════════ */
+        .chat-input-area {
+            flex-shrink: 0;
+            padding: 12px 28px 20px;
+            max-width: 820px; width: 100%; margin: 0 auto;
+        }
+
+        .input-wrap { position: relative; }
+
+        .input-wrap textarea {
+            width: 100%;
+            padding: 11px 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius);
+            color: var(--text-primary);
+            font-size: 13.5px;
+            resize: none; outline: none; font-family: inherit;
+            min-height: 44px; max-height: 140px; line-height: 1.5;
+            transition: all 0.2s;
+        }
+        .input-wrap textarea:focus { border-color: var(--accent-dim); box-shadow: 0 0 0 2px var(--accent-glow); }
+        .input-wrap textarea::placeholder { color: var(--text-tertiary); }
+
+        .input-toolbar {
+            display: flex; align-items: center; gap: 8px;
+            margin-top: 8px;
+        }
+
+        .btn-icon {
+            width: 34px; height: 34px;
+            border-radius: 8px;
+            background: var(--bg-hover);
+            border: 1px solid var(--border-light);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s; flex-shrink: 0;
+        }
+        .btn-icon:hover { background: var(--bg-card); color: var(--text-primary); }
+        .btn-icon svg { width: 16px; height: 16px; }
+
+        .btn-icon.active-file { color: var(--accent); border-color: var(--accent-dim); }
+
+        .btn-voice { position: relative; }
+        .btn-voice.recording {
+            color: var(--red);
+            border-color: rgba(248,113,113,0.3);
+            background: rgba(248,113,113,0.06);
+        }
+        .btn-voice.recording::after {
+            content: '';
+            position: absolute; inset: -4px;
+            border-radius: 12px;
+            border: 2px solid var(--red);
+            animation: recordRing 1s ease-out infinite;
+            opacity: 0;
+        }
+        @keyframes recordRing { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(1.5); opacity: 0; } }
+
+        .file-badge {
+            display: flex; align-items: center; gap: 5px;
+            padding: 4px 10px;
+            background: var(--bg-hover);
+            border: 1px solid var(--border-light);
+            border-radius: 20px;
+            font-size: 11px; color: var(--text-secondary);
+            max-width: 160px;
+        }
+        .file-badge-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .file-remove {
+            background: none; border: none; cursor: pointer;
+            color: var(--text-tertiary); font-size: 14px; line-height: 1;
+            flex-shrink: 0;
+        }
+        .file-remove:hover { color: var(--red); }
+
+        /* Image preview badge */
+        .img-preview-badge {
+            display: flex; align-items: center; gap: 6px;
+            background: var(--bg-hover);
+            border: 1px solid var(--border-light);
+            border-radius: 10px;
+            padding: 3px 8px 3px 3px;
+            flex-shrink: 0;
+        }
+        .img-preview-badge img {
+            width: 34px; height: 34px;
+            object-fit: cover; border-radius: 7px;
+            display: block;
+        }
+        .img-preview-badge span {
+            font-size: 11px; color: var(--text-secondary);
+            max-width: 90px; overflow: hidden;
+            text-overflow: ellipsis; white-space: nowrap;
+        }
+
+        /* Image in message bubble */
+        .msg-image {
+            max-width: 280px; max-height: 220px;
+            border-radius: 8px; display: block;
+            margin-bottom: 8px; object-fit: cover;
+            cursor: pointer; transition: opacity 0.15s;
+        }
+        .msg-image:hover { opacity: 0.88; }
+
+        /* Lightbox */
+        .lightbox {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 200;
+            display: none;
+            align-items: center; justify-content: center;
+            cursor: zoom-out;
+        }
+        .lightbox.open { display: flex; }
+        .lightbox img {
+            max-width: 92vw; max-height: 88vh;
+            border-radius: 10px;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.8);
+        }
+
+        .input-spacer { flex: 1; }
+
+        /* Response length segmented control */
+        .resp-len-ctrl {
+            display: flex; align-items: center; gap: 0;
+            border: 1px solid var(--border-light); border-radius: 7px;
+            overflow: hidden; flex-shrink: 0;
+        }
+        .resp-len-btn {
+            background: none; border: none; border-right: 1px solid var(--border-light);
+            color: var(--text-tertiary); font-size: 10.5px; font-family: inherit;
+            padding: 4px 9px; cursor: pointer; transition: all 0.15s;
+            white-space: nowrap; line-height: 1.4;
+        }
+        .resp-len-btn:last-child { border-right: none; }
+        .resp-len-btn:hover { color: var(--text-secondary); background: var(--bg-hover); }
+        .resp-len-btn.active {
+            background: var(--accent-dim); color: #041210; font-weight: 600;
+        }
+
+        .btn-send {
+            height: 34px; padding: 0 18px;
+            background: var(--accent-dim); color: #041210;
+            border: none; border-radius: 8px;
+            font-size: 13px; font-weight: 600; font-family: inherit;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .btn-send:hover { background: var(--accent); }
+
+        /* ═══════════════════ TREE PANEL ═══════════════════ */
+        .tree-panel {
+            flex: 1; min-height: 0;
+            position: relative; overflow: hidden;
+            background: var(--bg-primary);
+        }
+        .tree-svg { width: 100%; height: 100%; cursor: grab; }
+        .tree-svg:active { cursor: grabbing; }
+        .tree-node { cursor: pointer; }
+        .tree-node rect { transition: filter 0.15s ease; }
+        .tree-node:hover rect { filter: brightness(1.3); }
+        .tree-node text { pointer-events: none; }
+        .tree-link { fill: none; stroke-width: 1.5; }
+        /* Mini reset button */
+        .tree-reset-btn {
+            position: absolute; bottom: 16px; right: 16px;
+            padding: 6px 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: 7px;
+            color: var(--text-tertiary);
+            font-size: 11px; font-family: inherit; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tree-reset-btn:hover { background: var(--bg-hover); color: var(--text-secondary); }
+
+        /* ═══════════════════ BREADCRUMB ═══════════════════ */
+        .breadcrumb-bar {
+            display: none; align-items: center; gap: 2px;
+            padding: 6px 18px; flex-shrink: 0;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap; min-height: 34px;
+        }
+        .breadcrumb-item {
+            background: none; border: none;
+            color: var(--text-tertiary); font-size: 11.5px;
+            cursor: pointer; padding: 2px 7px; border-radius: 5px;
+            font-family: inherit; transition: all 0.15s; white-space: nowrap;
+        }
+        .breadcrumb-item:hover { color: var(--accent); background: var(--bg-hover); }
+        .breadcrumb-sep { color: var(--text-tertiary); font-size: 11px; user-select: none; }
+        .breadcrumb-current {
+            font-size: 11.5px; color: var(--text-secondary);
+            font-weight: 500; padding: 2px 7px;
+        }
+
+        /* ═══════════════════ PANEL RESIZE HANDLE ═══════════════════ */
+        .panel-resize-handle {
+            width: 5px;
+            flex-shrink: 0;
+            cursor: col-resize;
+            background: transparent;
+            display: none;              /* shown via JS when sub-panel is open */
+            position: relative;
+            z-index: 15;
+            transition: background 0.15s;
+        }
+        .panel-resize-handle::after {
+            content: '';
+            position: absolute;
+            top: 0; bottom: 0;
+            left: 2px;
+            width: 1px;
+            background: var(--border);
+            transition: background 0.15s, width 0.15s, left 0.15s;
+        }
+        .panel-resize-handle:hover::after,
+        .panel-resize-handle.dragging::after {
+            background: var(--accent);
+            width: 3px;
+            left: 1px;
+        }
+
+        /* ═══════════════════ SUB-PANEL (right) ═══════════════════ */
+        .sub-panel {
+            width: 340px;
+            flex-shrink: 0;
+            display: none;
+            flex-direction: column;
+            border-left: 1px solid var(--border);
+            background: var(--bg-secondary);
+            min-height: 0;
+            overflow: hidden;
+        }
+        .sub-panel.open { display: flex; }
+
+        .sub-panel-header {
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: flex-end;
+            flex-shrink: 0; background: var(--bg-tertiary);
+            min-height: 46px;
+        }
+
+        /* Child topic tabs */
+        .child-tabs-row {
+            display: flex; gap: 2px;
+            padding: 8px 8px 0; flex: 1; min-width: 0;
+            overflow-x: auto;
+        }
+        .child-tabs-row::-webkit-scrollbar { height: 0; }
+        .child-tab {
+            padding: 5px 11px; border-radius: 6px 6px 0 0;
+            font-size: 11px; cursor: pointer; color: var(--text-tertiary);
+            background: none; border: 1px solid transparent; border-bottom: none;
+            white-space: nowrap; font-family: inherit; transition: all 0.15s;
+            flex-shrink: 0; max-width: 120px;
+            overflow: hidden; text-overflow: ellipsis;
+        }
+        .child-tab:hover { color: var(--text-secondary); background: var(--bg-hover); }
+        .child-tab.active {
+            color: var(--accent-light); background: var(--bg-secondary);
+            border-color: var(--border-light);
+        }
+        .child-tab-add {
+            background: none; border: none; cursor: pointer;
+            color: var(--text-tertiary); padding: 5px 8px; font-size: 16px;
+            border-radius: 6px; flex-shrink: 0; align-self: flex-end;
+            font-family: inherit; transition: all 0.15s;
+        }
+        .child-tab-add:hover { color: var(--accent); background: var(--bg-hover); }
+
+        .sub-panel-header-actions {
+            display: flex; align-items: center; gap: 5px;
+            padding: 0 10px 6px 4px; flex-shrink: 0;
+        }
+        .btn-navigate-in {
+            padding: 4px 10px;
+            background: var(--accent-dim); color: #041210;
+            border: none; border-radius: 6px;
+            font-size: 11px; font-weight: 600; font-family: inherit;
+            cursor: pointer; transition: all 0.15s; white-space: nowrap;
+        }
+        .btn-navigate-in:hover { background: var(--accent); }
+        .sub-panel-close {
+            background: none; border: none;
+            color: var(--text-tertiary); cursor: pointer;
+            font-size: 16px; line-height: 1;
+            padding: 3px 5px; border-radius: 4px; transition: all 0.15s;
+            flex-shrink: 0;
+        }
+        .sub-panel-close:hover { color: var(--text-primary); background: var(--bg-hover); }
+
+        .sub-panel-messages {
+            flex: 1; min-height: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+            padding: 14px;
+            display: flex; flex-direction: column; gap: 12px;
+        }
+
+        /* Condensed messages */
+        .sub-panel-messages .message-group { max-width: 100%; }
+        .sub-panel-messages .message { padding: 9px 12px; font-size: 12.5px; }
+        .sub-panel-messages .message-user { max-width: 85%; font-size: 12px; }
+        .sub-panel-messages .message-ai { font-size: 12.5px; }
+        .sub-panel-messages .message-ai pre { padding: 8px; font-size: 11.5px; }
+        .sub-panel-messages .message-actions { display: none; }
+
+        .sub-panel-input {
+            flex-shrink: 0;
+            padding: 10px 12px;
+            border-top: 1px solid var(--border);
+            display: flex; gap: 7px; align-items: flex-end;
+        }
+        .sub-panel-input textarea {
+            flex: 1;
+            padding: 8px 11px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 12.5px;
+            resize: none; outline: none; font-family: inherit;
+            min-height: 36px; max-height: 90px; line-height: 1.45;
+            transition: all 0.2s;
+        }
+        .sub-panel-input textarea:focus { border-color: var(--accent-dim); box-shadow: 0 0 0 2px var(--accent-glow); }
+        .sub-panel-input textarea::placeholder { color: var(--text-tertiary); }
+        .sub-send { height: 36px; padding: 0 14px; font-size: 12px; }
+
+        /* ═══════════════════ DEEP DIVE TOOLTIP ═══════════════════ */
+        .deep-dive-tooltip {
+            position: fixed;
+            background: linear-gradient(135deg, var(--accent-dim), #0d7a6b);
+            color: #e0faf7;
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-size: 12px; font-weight: 600;
+            cursor: pointer; display: none; z-index: 1000;
+            box-shadow: 0 6px 20px rgba(45,212,191,0.3);
+            user-select: none;
+        }
+        .deep-dive-tooltip:hover { filter: brightness(1.1); }
+
+        /* ═══════════════════ MODALS ═══════════════════ */
+        .overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.55);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            z-index: 99; display: none;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translate(-50%,-47%); }
+            to   { opacity: 1; transform: translate(-50%,-50%); }
+        }
+        .modal {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-xl);
+            padding: 24px;
+            max-width: 580px; width: 92%; max-height: 80vh;
+            overflow-y: auto; z-index: 100; display: none;
+            box-shadow: var(--shadow-lg);
+            animation: slideUp 0.2s ease;
+        }
+        .modal h3 { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 14px; }
+        .modal .answer-content,.modal .rag-answer { line-height: 1.75; font-size: 13.5px; color: var(--text-secondary); }
+        .modal .answer-content pre,.modal .rag-answer pre { background: var(--bg-primary); padding: 12px; border-radius: 8px; overflow-x: auto; margin: 8px 0; border: 1px solid var(--border); }
+        .modal-actions { margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px; padding-top: 14px; border-top: 1px solid var(--border); }
+
+        .rag-sources { font-size: 11.5px; color: var(--text-tertiary); margin-top: 14px; }
+        .rag-source-item { background: var(--bg-primary); padding: 8px 12px; border-radius: 8px; margin-top: 6px; border: 1px solid var(--border); }
+
+        /* Settings form */
+        .settings-form { display: flex; flex-direction: column; gap: 14px; }
+        .settings-field { display: flex; flex-direction: column; gap: 5px; }
+        .settings-field label { font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.8px; }
+        .settings-field .input-base { font-size: 13px; padding: 9px 12px; }
+        .settings-field select.input-base { cursor: pointer; }
+        .settings-hint { font-size: 11px; color: var(--text-tertiary); margin-top: 3px; }
+        .settings-status { font-size: 12px; padding: 4px 0; }
+        .settings-status.success { color: var(--green); }
+        .settings-status.error { color: var(--red); }
+
+        /* Empty state */
+        .empty-state {
+            display: flex; align-items: center; justify-content: center;
+            height: 100%; flex-direction: column; gap: 12px; padding: 40px;
+        }
+        .empty-state h2 { font-size: 16px; font-weight: 600; }
+        .empty-state p { font-size: 13px; color: var(--text-tertiary); text-align: center; max-width: 280px; line-height: 1.6; }
+
+        /* Loading dots (legacy for RAG) */
+        .loading-dots { display: inline-flex; gap: 3px; align-items: center; }
+        .loading-dots span { width: 5px; height: 5px; background: var(--accent); border-radius: 50%; animation: ldBounce 1.1s infinite; }
+        .loading-dots span:nth-child(2) { animation-delay: 0.15s; }
+        .loading-dots span:nth-child(3) { animation-delay: 0.3s; }
+        @keyframes ldBounce { 0%,60%,100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-7px); opacity: 1; } }
+
+        /* ═══════════════════ DRAG-DROP OVERLAY ═══════════════════ */
+        .drop-overlay {
+            position: absolute; inset: 0; z-index: 60;
+            display: none; align-items: center; justify-content: center;
+            pointer-events: none;
+            border-radius: var(--radius-lg);
+        }
+        .drop-overlay.active { display: flex; }
+        .drop-overlay::before {
+            content: '';
+            position: absolute; inset: 10px;
+            border: 2px dashed var(--accent);
+            border-radius: var(--radius-lg);
+            background: rgba(45,212,191,0.05);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+        }
+        .drop-overlay-inner {
+            position: relative; z-index: 1;
+            text-align: center; pointer-events: none;
+        }
+        .drop-overlay-icon {
+            font-size: 44px; line-height: 1;
+            margin-bottom: 12px; display: block;
+            animation: dropIconFloat 1.2s ease-in-out infinite alternate;
+        }
+        @keyframes dropIconFloat {
+            from { transform: translateY(0); }
+            to   { transform: translateY(-8px); }
+        }
+        .drop-overlay-title {
+            font-size: 16px; font-weight: 600;
+            color: var(--accent-light); margin-bottom: 6px;
+        }
+        .drop-overlay-sub {
+            font-size: 12px; color: var(--text-secondary);
+            display: flex; gap: 10px; justify-content: center; align-items: center;
+        }
+        .drop-chip {
+            padding: 3px 10px;
+            background: rgba(45,212,191,0.1);
+            border: 1px solid rgba(45,212,191,0.25);
+            border-radius: 20px;
+            font-size: 11px; color: var(--accent);
+        }
+        .drop-chip.warm {
+            background: rgba(244,162,97,0.1);
+            border-color: rgba(244,162,97,0.25);
+            color: var(--warm);
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 4px; }
+
+        /* Ambient glows */
+        .ambient { position: fixed; pointer-events: none; z-index: 0; border-radius: 50%; }
+        .ambient-1 { top: -200px; right: -150px; width: 500px; height: 500px; background: radial-gradient(circle, rgba(45,212,191,0.03) 0%, transparent 65%); }
+        .ambient-2 { bottom: -200px; left: 100px; width: 400px; height: 400px; background: radial-gradient(circle, rgba(244,162,97,0.02) 0%, transparent 65%); }
+    </style>
+</head>
+<body>
+
+<div class="ambient ambient-1"></div>
+<div class="ambient ambient-2"></div>
+
+<!-- ══════════════ SIDEBAR ══════════════ -->
+<div class="sidebar">
+    <div class="sidebar-header">
+        <div class="logo">
+            <div class="logo-icon">
+                <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="lg1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0f1518"/><stop offset="100%" stop-color="#0a0e11"/></linearGradient>
+                        <linearGradient id="lg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0d9488"/><stop offset="100%" stop-color="#2dd4bf"/></linearGradient>
+                        <linearGradient id="lg3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4a261"/><stop offset="100%" stop-color="#e76f51"/></linearGradient>
+                    </defs>
+                    <rect width="512" height="512" rx="108" fill="url(#lg1)"/>
+                    <path d="M256 130L256 200" stroke="url(#lg2)" stroke-width="3" opacity=".25" stroke-linecap="round"/>
+                    <path d="M256 200Q200 230 156 270" stroke="url(#lg2)" stroke-width="2.5" opacity=".2" stroke-linecap="round" fill="none"/>
+                    <path d="M256 200Q312 230 356 270" stroke="url(#lg2)" stroke-width="2.5" opacity=".2" stroke-linecap="round" fill="none"/>
+                    <circle cx="256" cy="124" r="14" fill="url(#lg2)" opacity=".9"/>
+                    <circle cx="152" cy="274" r="10" fill="url(#lg2)" opacity=".6"/>
+                    <circle cx="360" cy="274" r="10" fill="url(#lg2)" opacity=".6"/>
+                    <path d="M296 195C296 175,278 162,256 162C234 162,216 175,216 192C216 210,234 218,256 224C278 230,296 238,296 256C296 273,278 286,256 286C234 286,216 273,216 253" fill="none" stroke="url(#lg2)" stroke-width="20" stroke-linecap="round"/>
+                    <circle cx="296" cy="195" r="6" fill="url(#lg3)" opacity=".85"/>
+                    <circle cx="216" cy="253" r="6" fill="url(#lg3)" opacity=".85"/>
+                </svg>
+            </div>
+            <div><h1>Studorge</h1><span>AI-Powered Learning</span></div>
+        </div>
+        <div class="new-topic-row">
+            <input type="text" class="input-base" id="newTopicInput" placeholder="新专题名称...">
+            <button class="btn btn-primary" onclick="createTopic()">创建</button>
+        </div>
+    </div>
+    <div class="topic-list" id="topicList">
+        <div class="topic-list-label">我的专题</div>
+    </div>
+    <div class="rag-section">
+        <div class="section-label">知识库检索</div>
+        <div class="rag-input-row">
+            <input type="text" class="input-base" id="ragInput" placeholder="搜索学过的内容..." onkeydown="if(event.key==='Enter')searchRag()">
+            <button class="btn btn-ghost btn-small" onclick="searchRag()">搜索</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════ MAIN ══════════════ -->
+<div class="main" id="mainArea">
+    <!-- Drag-drop overlay -->
+    <div class="drop-overlay" id="dropOverlay">
+        <div class="drop-overlay-inner">
+            <span class="drop-overlay-icon">⬇︎</span>
+            <div class="drop-overlay-title">释放以上传</div>
+            <div class="drop-overlay-sub">
+                <span class="drop-chip warm">图片 JPG / PNG / WebP</span>
+                <span class="drop-chip">文档 PDF / TXT / MD</span>
+            </div>
+        </div>
+    </div>
+
+    <button class="btn-settings" onclick="openSettings()">API 设置</button>
+    <!-- Breadcrumb navigation (shown when depth > 0) -->
+    <div class="breadcrumb-bar" id="breadcrumbBar"></div>
+    <div class="tab-bar" id="tabBar" style="display:none;">
+        <button class="tab-btn active" data-tab="chat" onclick="switchTab('chat')">学习对话</button>
+        <button class="tab-btn" data-tab="tree" onclick="switchTab('tree')">知识树</button>
+    </div>
+    <div class="content">
+        <div class="panel active" id="panelChat">
+            <div class="chat-panel">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="empty-state">
+                        <h2>开始你的学习旅程</h2>
+                        <p>在左侧创建一个专题，然后开始提问。AI 将帮助你深入理解每个知识点。</p>
+                    </div>
+                </div>
+                <div class="chat-input-area" id="chatInputArea" style="display:none;">
+                    <div class="input-wrap">
+                        <textarea id="questionInput" placeholder="输入你想学习的问题..." rows="1"></textarea>
+                    </div>
+                    <div class="input-toolbar">
+                        <label class="btn-icon" id="attachBtn" title="上传文件">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+                            <input type="file" id="fileInput" style="display:none" accept=".txt,.md,.pdf" onchange="handleFileSelect(this)">
+                        </label>
+                        <label class="btn-icon" id="imgUploadBtn" title="上传图片">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                            <input type="file" id="imageInput" style="display:none" accept="image/*" onchange="handleImageSelect(this)">
+                        </label>
+                        <button class="btn-icon btn-voice" id="voiceBtn" title="语音输入" onclick="toggleVoice()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                        </button>
+                        <div class="file-badge" id="fileBadge" style="display:none;">
+                            <span class="file-badge-name" id="fileNameLabel"></span>
+                            <button class="file-remove" onclick="removeFile()">×</button>
+                        </div>
+                        <div class="img-preview-badge" id="imgPreviewBadge" style="display:none;">
+                            <img id="imgPreviewThumb" src="" alt="预览">
+                            <span id="imgPreviewName"></span>
+                            <button class="file-remove" onclick="removeImage()">×</button>
+                        </div>
+                        <div class="input-spacer"></div>
+                        <div class="resp-len-ctrl" id="respLenCtrl">
+                            <button class="resp-len-btn active" data-val="normal"  onclick="setRespLen('normal')">Normal</button>
+                            <button class="resp-len-btn" data-val="extend"         onclick="setRespLen('extend')">Extend</button>
+                            <button class="resp-len-btn" data-val="extend_longer"  onclick="setRespLen('extend_longer')">Extend Longer</button>
+                        </div>
+                        <button class="btn-send" onclick="askQuestion()">发送 ↵</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel" id="panelTree">
+            <div class="tree-panel">
+                <svg class="tree-svg" id="treeSvg"></svg>
+                <button class="tree-reset-btn" id="treeResetBtn" style="display:none" onclick="resetTreeView()">重置视图</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════ PANEL RESIZE HANDLE ══════════════ -->
+<div class="panel-resize-handle" id="panelResizeHandle" title="拖拽调整面板宽度"></div>
+
+<!-- ══════════════ SUB PANEL ══════════════ -->
+        <div class="sub-panel" id="subPanel">
+          <div class="sub-panel-header">
+            <!-- Child topic tab selector -->
+            <div class="child-tabs-row" id="childTabs"></div>
+            <div class="sub-panel-header-actions">
+              <button class="btn-navigate-in" onclick="navigateInto()" title="进入此专题，将其作为主专题">进入 →</button>
+              <button class="sub-panel-close" onclick="closeSubPanel()">×</button>
+            </div>
+          </div>
+    <div class="sub-panel-messages" id="subPanelMessages">
+        <div class="empty-state">
+            <p style="font-size:12px;">在此深入探索子专题的知识</p>
+        </div>
+    </div>
+    <div class="sub-panel-input">
+        <textarea id="subPanelInput" placeholder="继续追问..." rows="1"></textarea>
+        <div style="display:flex;align-items:center;gap:6px;padding:4px 2px 0;">
+            <div class="resp-len-ctrl" id="subRespLenCtrl">
+                <button class="resp-len-btn active" data-val="normal"  onclick="setRespLen('normal')">Normal</button>
+                <button class="resp-len-btn" data-val="extend"         onclick="setRespLen('extend')">Extend</button>
+                <button class="resp-len-btn" data-val="extend_longer"  onclick="setRespLen('extend_longer')">Extend Longer</button>
+            </div>
+            <div style="flex:1"></div>
+            <button class="btn btn-primary btn-small sub-send" onclick="askInSubPanel()">发送</button>
+        </div>
+    </div>
+</div>
+
+<!-- Lightbox for image preview -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <img id="lightboxImg" src="" alt="">
+</div>
+
+<!-- Deep dive tooltip -->
+<div class="deep-dive-tooltip" id="deepDiveTooltip" onclick="deepDiveSelected()">深入了解 →</div>
+
+<!-- Overlays & Modals -->
+<div class="overlay" id="overlay" onclick="closeModals()"></div>
+
+<div class="modal" id="nodeDetail">
+    <div style="display:flex; align-items:flex-start; gap:10px; margin-bottom:12px;">
+        <h3 id="nodeDetailQuestion" style="flex:1; margin:0;"></h3>
+        <button class="btn btn-ghost btn-small" onclick="deepDiveFromNode()" style="flex-shrink:0; white-space:nowrap;">继续深入 →</button>
+    </div>
+    <div class="answer-content" id="nodeDetailAnswer"></div>
+    <div class="modal-actions">
+        <button class="btn btn-danger btn-small" onclick="closeModals()">关闭</button>
+    </div>
+</div>
+
+<div class="modal" id="ragModal">
+    <h3>知识库搜索结果</h3>
+    <div class="rag-answer" id="ragAnswer"></div>
+    <div class="rag-sources" id="ragSources"></div>
+    <div class="modal-actions">
+        <button class="btn btn-danger btn-small" onclick="closeModals()">关闭</button>
+    </div>
+</div>
+
+<div class="modal" id="settingsModal">
+    <h3>API 设置</h3>
+    <div class="settings-form">
+        <div class="settings-field">
+            <label>API 提供商</label>
+            <select id="settingsProvider" class="input-base" onchange="onProviderChange()">
+                <option value="openai">OpenAI 兼容</option>
+                <option value="claude">Claude (Anthropic)</option>
+            </select>
+        </div>
+        <div class="settings-field">
+            <label>Base URL</label>
+            <input type="text" id="settingsBaseUrl" class="input-base" placeholder="https://api.openai.com/v1">
+            <div class="settings-hint">留空则使用环境默认值</div>
+        </div>
+        <div class="settings-field">
+            <label>API Key</label>
+            <input type="password" id="settingsApiKey" class="input-base" placeholder="sk-...">
+            <div class="settings-hint" id="settingsKeyHint">留空则使用环境默认值</div>
+        </div>
+        <div class="settings-field">
+            <label>模型名称</label>
+            <input type="text" id="settingsModel" class="input-base" placeholder="gpt-4o">
+        </div>
+        <div class="settings-status" id="settingsStatus"></div>
+    </div>
+    <div class="modal-actions">
+        <button class="btn btn-danger btn-small" onclick="resetSettings()">恢复默认</button>
+        <button class="btn btn-primary btn-small" onclick="saveSettings()">保存</button>
+        <button class="btn btn-ghost btn-small" onclick="closeModals()">关闭</button>
+    </div>
+</div>
+
+<script>
+// ═══════════════════════ STATE ═══════════════════════
+let currentTopicId = null;
+let currentTopicName = '';
+let currentNodes = [];
+
+// Navigation path: [{id, name}, …] root→current (last item = current)
+let navPath = [];
+// Children of current topic shown in right panel
+let childTopics = [];
+let activeChildId = null;
+let activeChildName = '';
+let subNodes = [];
+// Tracks whether a "deep dive" selection originated from sub-panel
+let deepDiveSourcePanel = 'main'; // 'main' | 'sub'
+
+// Deprecated aliases kept for compat (use activeChildId instead)
+let subTopicId = null;
+let subTopicName = '';
+
+let allTopics = [];
+let expandedTopics = new Set();
+
+let selectedNodeId = null;
+let selectedText = '';
+
+// Response length setting: 'normal' | 'extend' | 'extend_longer'
+let responseLength = localStorage.getItem('responseLength') || 'normal';
+
+let attachedFileText = null;
+let attachedFileName = null;
+let attachedImageUrl  = null;
+let attachedImageName = null;
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
+
+let isAskingMain = false;
+let isAskingSub = false;
+
+// ═══════════════════════ HELPERS ═══════════════════════
+// ═══════════════════════ RESPONSE LENGTH ═══════════════════════
+function setRespLen(val) {
+    responseLength = val;
+    localStorage.setItem('responseLength', val);
+    // Update all resp-len-ctrl buttons on the page
+    document.querySelectorAll('.resp-len-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.val === val);
+    });
+}
+
+// Apply saved preference on load
+document.addEventListener('DOMContentLoaded', () => setRespLen(responseLength));
+
+async function api(url, method = 'GET', body = null) {
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    if (body) opts.body = JSON.stringify(body);
+    const res = await fetch(url, opts);
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+}
+
+function escapeHtml(t) {
+    const d = document.createElement('div');
+    d.textContent = t;
+    return d.innerHTML;
+}
+
+function renderMarkdown(text) {
+    if (!text) return '';
+    return marked.parse(text);
+}
+
+function renderLatex(el) {
+    if (typeof renderMathInElement === 'function') {
+        renderMathInElement(el, {
+            delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '$', right: '$', display: false },
+                { left: '\\(', right: '\\)', display: false },
+                { left: '\\[', right: '\\]', display: true },
+            ],
+            throwOnError: false,
+        });
+    }
+}
+
+function thinkingHTML() {
+    return `<div class="thinking-indicator">
+        <div class="thinking-orb"></div>
+        <span class="thinking-text">正在思考…</span>
+    </div>`;
+}
+
+// ═══════════════════════ TOPICS ═══════════════════════
+async function loadTopics() {
+    allTopics = await api('/api/topics');
+    renderTopicTree();
+}
+
+function renderTopicTree() {
+    const list = document.getElementById('topicList');
+    const rootTopics = allTopics.filter(t => !t.parent_id);
+    const childMap = {};
+    allTopics.forEach(t => {
+        if (t.parent_id) {
+            if (!childMap[t.parent_id]) childMap[t.parent_id] = [];
+            childMap[t.parent_id].push(t);
+        }
+    });
+
+    if (rootTopics.length === 0) {
+        list.innerHTML = `<div class="topic-list-label">我的专题</div>
+            <div style="padding:12px 10px;text-align:center;color:var(--text-tertiary);font-size:11.5px;">还没有专题，创建一个吧</div>`;
+        return;
+    }
+
+    function renderNode(t, depth) {
+        const isMain = t.id === currentTopicId;
+        const isSub = t.id === activeChildId;
+        const children = childMap[t.id] || [];
+        const hasChildren = children.length > 0;
+        const expanded = expandedTopics.has(t.id);
+        const indent = 10 + depth * 14;
+
+        const clickFn = depth === 0
+            ? `selectTopic(${t.id}, '${t.name.replace(/'/g, "\\'")}')`
+            : `makeTopicMain(${t.id})`;
+
+        let html = `<div class="topic-item ${isMain ? 'active' : ''} ${depth > 0 ? 'sub-topic' : ''} ${isSub ? 'sub-active' : ''}"
+                style="padding-left:${indent}px" onclick="${clickFn}">`;
+
+        if (hasChildren) {
+            html += `<button class="topic-expand-btn ${expanded ? 'expanded' : ''}"
+                onclick="event.stopPropagation();toggleExpand(${t.id})">▶</button>`;
+        } else {
+            html += `<span class="topic-icon">${t.name.slice(0, 1).toUpperCase()}</span>`;
+        }
+
+        html += `<span class="topic-name">${escapeHtml(t.name)}</span>
+            <button class="topic-delete-btn" onclick="event.stopPropagation();deleteTopic(${t.id})">×</button>
+        </div>`;
+
+        if (hasChildren && expanded) {
+            children.forEach(child => { html += renderNode(child, depth + 1); });
+        }
+        return html;
+    }
+
+    list.innerHTML = '<div class="topic-list-label">我的专题</div>' +
+        rootTopics.map(t => renderNode(t, 0)).join('');
+}
+
+function toggleExpand(topicId) {
+    if (expandedTopics.has(topicId)) {
+        expandedTopics.delete(topicId);
+    } else {
+        expandedTopics.add(topicId);
+    }
+    renderTopicTree();
+}
+
+async function createTopic(parentId = null, name = null) {
+    if (!name) {
+        const input = document.getElementById('newTopicInput');
+        name = input.value.trim();
+        if (!name) return null;
+        input.value = '';
+    }
+    const topic = await api('/api/topics', 'POST', { name, parent_id: parentId });
+    await loadTopics();
+    return topic;
+}
+
+async function deleteTopic(id) {
+    if (!confirm('确定删除此专题及其所有学习记录？')) return;
+    await api(`/api/topics/${id}`, 'DELETE');
+    if (currentTopicId === id) {
+        currentTopicId = null; currentTopicName = '';
+        currentNodes = [];
+        showMainEmptyState();
+        document.getElementById('chatInputArea').style.display = 'none';
+        document.getElementById('tabBar').style.display = 'none';
+    }
+    if (activeChildId === id) closeSubPanel();
+    // If deleted topic is in nav path, go back to root
+    if (navPath.some(p => p.id === id)) {
+        navPath = navPath.slice(0, navPath.findIndex(p => p.id === id));
+        if (navPath.length > 0) {
+            const last = navPath[navPath.length - 1];
+            currentTopicId = last.id; currentTopicName = last.name;
+        }
+    }
+    await loadTopics();
+}
+
+function showMainEmptyState() {
+    document.getElementById('chatMessages').innerHTML = `
+        <div class="empty-state">
+            <h2>开始你的学习旅程</h2>
+            <p>在左侧创建一个专题，然后开始提问。</p>
+        </div>`;
+}
+
+async function selectTopic(id, name) {
+    // Reset nav path to just this root topic
+    navPath = [{ id, name }];
+    currentTopicId = id;
+    currentTopicName = name;
+    activeChildId = null;
+    activeChildName = '';
+    subTopicId = id; subTopicName = name; // compat aliases
+    selectedNodeId = null;
+
+    document.getElementById('tabBar').style.display = 'flex';
+    document.getElementById('chatInputArea').style.display = 'block';
+
+    await loadTopics();
+    const data = await api(`/api/topics/${id}/tree`);
+    currentNodes = data.nodes;
+    renderMainChat();
+    renderBreadcrumb();
+    await loadChildTopics(id);
+}
+
+// ═══════════════════════ NAVIGATION ═══════════════════════
+
+// Render breadcrumb from navPath
+function renderBreadcrumb() {
+    const bar = document.getElementById('breadcrumbBar');
+    if (!bar) return;
+    if (navPath.length <= 1) {
+        bar.style.display = 'none';
+        return;
+    }
+    bar.style.display = 'flex';
+    bar.innerHTML = navPath.map((item, i) => {
+        if (i === navPath.length - 1) {
+            return `<span class="breadcrumb-current">${escapeHtml(item.name)}</span>`;
+        }
+        return `<button class="breadcrumb-item" onclick="navigateBack(${i})">${escapeHtml(item.name)}</button><span class="breadcrumb-sep">›</span>`;
+    }).join('');
+}
+
+// Navigate back to a specific position in the path (index into navPath)
+async function navigateBack(index) {
+    if (index < 0 || index >= navPath.length) return;
+    const target = navPath[index];
+    navPath = navPath.slice(0, index + 1);
+
+    currentTopicId = target.id;
+    currentTopicName = target.name;
+    activeChildId = null;
+    activeChildName = '';
+
+    const data = await api(`/api/topics/${currentTopicId}/tree`);
+    currentNodes = data.nodes;
+    renderMainChat();
+    renderBreadcrumb();
+    await loadTopics();
+    await loadChildTopics(currentTopicId);
+}
+
+// "进入 →": make the active child the new main topic
+async function navigateInto() {
+    if (!activeChildId) return;
+
+    navPath.push({ id: activeChildId, name: activeChildName });
+    currentTopicId = activeChildId;
+    currentTopicName = activeChildName;
+    activeChildId = null;
+    activeChildName = '';
+
+    const data = await api(`/api/topics/${currentTopicId}/tree`);
+    currentNodes = data.nodes;
+    renderMainChat();
+    renderBreadcrumb();
+    await loadTopics();
+    await loadChildTopics(currentTopicId);
+}
+
+// Navigate to any topic by id (finds path, shows parent in main + target in sub)
+async function navigateTo(topicId) {
+    const path = findPathToTopic(topicId);
+    if (!path || path.length === 0) return;
+
+    if (path.length === 1) {
+        await selectTopic(path[0].id, path[0].name);
+        return;
+    }
+
+    // Parent becomes main, target becomes active child
+    const parent = path[path.length - 2];
+    const target = path[path.length - 1];
+
+    navPath = path.slice(0, path.length - 1).map(t => ({ id: t.id, name: t.name }));
+    currentTopicId = parent.id;
+    currentTopicName = parent.name;
+    activeChildId = null;
+    activeChildName = '';
+
+    document.getElementById('tabBar').style.display = 'flex';
+    document.getElementById('chatInputArea').style.display = 'block';
+
+    const data = await api(`/api/topics/${currentTopicId}/tree`);
+    currentNodes = data.nodes;
+    renderMainChat();
+    renderBreadcrumb();
+    await loadTopics();
+
+    // Rebuild childTopics and select the target
+    childTopics = allTopics.filter(t => t.parent_id === currentTopicId);
+    renderChildTabs();
+    if (childTopics.length > 0) {
+        await switchChild(target.id, target.name);
+    }
+}
+
+// Make a topic the main panel directly (used by tree node clicks)
+async function makeTopicMain(topicId) {
+    const path = findPathToTopic(topicId);
+    if (!path || path.length === 0) return;
+
+    navPath = path.map(t => ({ id: t.id, name: t.name }));
+    currentTopicId = topicId;
+    currentTopicName = path[path.length - 1].name;
+    activeChildId = null;
+    activeChildName = '';
+
+    document.getElementById('tabBar').style.display = 'flex';
+    document.getElementById('chatInputArea').style.display = 'block';
+
+    const data = await api(`/api/topics/${currentTopicId}/tree`);
+    currentNodes = data.nodes;
+    renderMainChat();
+    renderBreadcrumb();
+    await loadTopics();
+    await loadChildTopics(currentTopicId);
+}
+
+// Build the ancestor path from root to a given topic id
+function findPathToTopic(targetId) {
+    const path = [];
+    let current = allTopics.find(t => t.id === targetId);
+    while (current) {
+        path.unshift(current);
+        current = current.parent_id ? allTopics.find(t => t.id === current.parent_id) : null;
+    }
+    return path;
+}
+
+// ═══════════════════════ CHILD TOPICS (sub-panel) ═══════════════════════
+
+// Load direct children of parentId and set up the right panel
+async function loadChildTopics(parentId) {
+    childTopics = allTopics.filter(t => t.parent_id === parentId);
+
+    if (childTopics.length === 0) {
+        // No children — hide sub-panel only if no active child
+        if (!activeChildId) closeSubPanel();
+        return;
+    }
+
+    // Prefer keeping the current active child if still valid
+    let target = childTopics[0];
+    if (activeChildId) {
+        const existing = childTopics.find(t => t.id === activeChildId);
+        if (existing) target = existing;
+        else activeChildId = null;
+    }
+
+    renderChildTabs();
+    await switchChild(target.id, target.name);
+}
+
+// Render the child topic tab bar
+function renderChildTabs() {
+    const container = document.getElementById('childTabs');
+    if (!container) return;
+    container.innerHTML = childTopics.map(t => {
+        const label = t.name.length > 16 ? t.name.slice(0, 14) + '…' : t.name;
+        return `<button class="child-tab${t.id === activeChildId ? ' active' : ''}"
+            onclick="switchChild(${t.id}, ${JSON.stringify(t.name)})"
+            title="${escapeHtml(t.name)}">${escapeHtml(label)}</button>`;
+    }).join('') + `<button class="child-tab-add" onclick="createChildTopic()" title="新建子专题">+</button>`;
+}
+
+// Switch to a different child topic in the right panel
+async function switchChild(id, name) {
+    activeChildId = id;
+    activeChildName = name;
+    subTopicId = id; subTopicName = name; // compat
+
+    document.getElementById('subPanel').classList.add('open');
+    document.getElementById('panelResizeHandle').style.display = 'block';
+    renderChildTabs(); // refresh active state
+
+    const data = await api(`/api/topics/${id}/tree`);
+    subNodes = data.nodes;
+    renderSubChat();
+}
+
+// Create a new child topic under current topic
+async function createChildTopic() {
+    const name = prompt('新子专题名称:');
+    if (!name || !name.trim()) return;
+    const topic = await api('/api/topics', 'POST', { name: name.trim(), parent_id: currentTopicId });
+    await loadTopics();
+    childTopics = allTopics.filter(t => t.parent_id === currentTopicId);
+    renderChildTabs();
+    await switchChild(topic.id, topic.name);
+}
+
+// Close the right panel
+function closeSubPanel() {
+    activeChildId = null;
+    activeChildName = '';
+    subTopicId = null; subTopicName = '';
+    subNodes = [];
+    document.getElementById('subPanel').classList.remove('open');
+    document.getElementById('panelResizeHandle').style.display = 'none';
+    renderChildTabs && renderChildTabs();
+}
+
+// Legacy alias kept for any remaining calls
+async function openSubPanel(topicId, topicName) {
+    await makeTopicMain(topicId);
+}
+
+function renderSubChat() {
+    const container = document.getElementById('subPanelMessages');
+    if (subNodes.length === 0) {
+        container.innerHTML = `<div class="empty-state"><p style="font-size:12px;">在此深入探索子专题的知识</p></div>`;
+        return;
+    }
+    container.innerHTML = subNodes.map(n => buildMessageGroupHTML(n)).join('');
+    container.scrollTop = container.scrollHeight;
+    renderLatex(container);
+}
+
+// ═══════════════════════ RENDER CHAT ═══════════════════════
+function buildMessageGroupHTML(n) {
+    return `<div class="message-group">
+        <div class="message-user-wrap">
+            <div class="message message-user">${escapeHtml(n.question)}</div>
+        </div>
+        <div class="message message-ai" data-node-id="${n.id}">
+            <div class="message-ai-label">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+                AI
+            </div>
+            ${renderMarkdown(n.answer)}
+            <div class="message-actions">
+                <button class="action-btn" onclick="speakMessage(this)" data-text="${escapeHtml(n.answer)}" title="朗读">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
+                    朗读
+                </button>
+                <button class="action-btn" onclick="copyText('${escapeHtml(n.answer).replace(/'/g, "&#39;")}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                    复制
+                </button>
+            </div>
+        </div>
+    </div>`;
+}
+
+function renderMainChat() {
+    const container = document.getElementById('chatMessages');
+    if (currentNodes.length === 0) {
+        container.innerHTML = `<div class="empty-state"><h2>准备好了</h2><p>输入问题开始探索。选中回答中的文字可以深入了解。</p></div>`;
+        return;
+    }
+    container.innerHTML = currentNodes.map(n => buildMessageGroupHTML(n)).join('');
+    container.scrollTop = container.scrollHeight;
+    renderLatex(container);
+}
+
+// ═══════════════════════ STREAMING ASK ═══════════════════════
+async function streamAsk(topicId, question, container, nodesList, onDone, imageUrl = null) {
+    if (container.querySelector('.empty-state')) container.innerHTML = '';
+
+    const msgId = 'msg-' + Date.now();
+    const imgHtml = imageUrl
+        ? `<img src="${imageUrl}" class="msg-image" alt="图片" onclick="openLightbox(this.src)"><br>`
+        : '';
+    container.insertAdjacentHTML('beforeend', `
+        <div class="message-group" id="${msgId}">
+            <div class="message-user-wrap">
+                <div class="message message-user">${imgHtml}${escapeHtml(question)}</div>
+            </div>
+            <div class="message message-ai" id="${msgId}-ai">
+                <div class="message-ai-label">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg> AI
+                </div>
+                ${thinkingHTML()}
+            </div>
+        </div>`);
+    container.scrollTop = container.scrollHeight;
+
+    const aiEl = document.getElementById(`${msgId}-ai`);
+    let rawAnswer = '';
+    let isThinking = true;
+    let textEl = null;
+
+    try {
+        const payload = { topic_id: topicId, question, node_type: 'question', response_length: responseLength };
+        if (imageUrl) payload.image_data_url = imageUrl;
+        const resp = await fetch('/api/ask/stream', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+
+        if (!resp.ok) throw new Error(await resp.text());
+
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buf += decoder.decode(value, { stream: true });
+            const lines = buf.split('\n');
+            buf = lines.pop();
+
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                let data;
+                try { data = JSON.parse(line.slice(6)); } catch { continue; }
+
+                if (data.error) {
+                    aiEl.querySelector('.thinking-indicator,#stream-text-wrap')?.remove();
+                    aiEl.insertAdjacentHTML('beforeend', `<span style="color:var(--red)">请求失败: ${escapeHtml(data.error)}</span>`);
+                    break;
+                }
+
+                if (data.token) {
+                    if (isThinking) {
+                        isThinking = false;
+                        aiEl.querySelector('.thinking-indicator').remove();
+                        aiEl.insertAdjacentHTML('beforeend',
+                            `<div id="stream-text-wrap"><span id="stream-text-${msgId}" style="white-space:pre-wrap;font-size:13.5px;line-height:1.75;color:var(--text-secondary)"></span><span class="stream-cursor"></span></div>`
+                        );
+                        textEl = document.getElementById(`stream-text-${msgId}`);
+                    }
+                    rawAnswer += data.token;
+                    if (textEl) textEl.textContent = rawAnswer;
+                    container.scrollTop = container.scrollHeight;
+                }
+
+                if (data.done) {
+                    document.getElementById('stream-text-wrap')?.remove();
+                    aiEl.insertAdjacentHTML('beforeend', renderMarkdown(rawAnswer));
+                    aiEl.dataset.nodeId = data.node.id;
+                    // add action buttons
+                    aiEl.insertAdjacentHTML('beforeend', `
+                        <div class="message-actions">
+                            <button class="action-btn" onclick="speakMessage(this)" data-text="${escapeHtml(rawAnswer)}" title="朗读">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
+                                朗读
+                            </button>
+                            <button class="action-btn" onclick="copyText(this.dataset.t)" data-t="${escapeHtml(rawAnswer)}">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                                复制
+                            </button>
+                        </div>`);
+                    renderLatex(aiEl);
+                    container.scrollTop = container.scrollHeight;
+                    nodesList.push(data.node);
+                    if (onDone) onDone(data.node);
+                }
+            }
+        }
+    } catch (e) {
+        if (aiEl) {
+            aiEl.querySelector('.thinking-indicator,#stream-text-wrap')?.remove();
+            aiEl.insertAdjacentHTML('beforeend', `<span style="color:var(--red)">请求失败: ${escapeHtml(e.message)}</span>`);
+        }
+    }
+}
+
+// ═══════════════════════ ASK MAIN ═══════════════════════
+async function askQuestion() {
+    if (isAskingMain) return;
+    const input = document.getElementById('questionInput');
+    let question = input.value.trim();
+    if ((!question && !attachedImageUrl) || !currentTopicId) return;
+    if (!question) question = '请描述一下这张图片中的内容。';
+
+    if (attachedFileText) {
+        question = `[请根据以下文件内容回答我的问题]\n文件名: ${attachedFileName}\n\n${attachedFileText}\n\n---\n我的问题: ${question}`;
+    }
+
+    const imgUrl = attachedImageUrl;
+    input.value = ''; input.style.height = 'auto';
+    removeFile();
+    removeImage();
+    isAskingMain = true;
+    await streamAsk(currentTopicId, question, document.getElementById('chatMessages'), currentNodes, null, imgUrl);
+    isAskingMain = false;
+}
+
+// ═══════════════════════ ASK SUB-PANEL ═══════════════════════
+async function askInSubPanel() {
+    if (isAskingSub || !activeChildId) return;
+    const input = document.getElementById('subPanelInput');
+    const question = input.value.trim();
+    if (!question) return;
+    input.value = ''; input.style.height = 'auto';
+    isAskingSub = true;
+    await streamAsk(activeChildId, question, document.getElementById('subPanelMessages'), subNodes);
+    isAskingSub = false;
+    // Refresh sub-nodes after answer
+    const data = await api(`/api/topics/${activeChildId}/tree`);
+    subNodes = data.nodes;
+}
+
+// ═══════════════════════ DEEP DIVE → SUB-TOPIC ═══════════════════════
+// Track mousedown position to require a real drag before showing the deep-dive tooltip
+let _ddMouseDownX = 0, _ddMouseDownY = 0;
+document.addEventListener('mousedown', e => {
+    _ddMouseDownX = e.clientX;
+    _ddMouseDownY = e.clientY;
+    // Hide tooltip immediately when clicking anywhere outside it
+    const tooltip = document.getElementById('deepDiveTooltip');
+    if (tooltip && !tooltip.contains(e.target)) {
+        tooltip.style.display = 'none';
+    }
+});
+
+document.addEventListener('mouseup', e => {
+    const sel = window.getSelection();
+    const text = sel?.toString().trim() || '';
+    const tooltip = document.getElementById('deepDiveTooltip');
+
+    // Require: text ≥ 5 chars, AND mouse moved ≥ 8px (real drag, not accidental click)
+    const dx = Math.abs(e.clientX - _ddMouseDownX);
+    const dy = Math.abs(e.clientY - _ddMouseDownY);
+    const realDrag = dx > 8 || dy > 8;
+
+    if (realDrag && text && text.length >= 5 && text.length < 400) {
+        const anchor = sel.anchorNode?.parentElement?.closest?.('.message-ai');
+        if (anchor) {
+            selectedText = text;
+            const nid = anchor.dataset.nodeId;
+            if (nid) selectedNodeId = parseInt(nid);
+            // Detect whether the selection is inside the sub-panel
+            const inSub = !!sel.anchorNode?.parentElement?.closest?.('#subPanelMessages');
+            deepDiveSourcePanel = inSub ? 'sub' : 'main';
+            tooltip.style.left = e.pageX + 'px';
+            tooltip.style.top = (e.pageY - 46) + 'px';
+            tooltip.style.display = 'block';
+            return;
+        }
+    }
+    // No valid selection — hide tooltip (no delay needed since mousedown already hides it)
+    tooltip.style.display = 'none';
+});
+
+async function deepDiveSelected() {
+    document.getElementById('deepDiveTooltip').style.display = 'none';
+    if (!currentTopicId) return;
+
+    // AI-generated concise title for the sub-topic
+    let subName;
+    try {
+        const r = await api('/api/generate-title', 'POST', { text: selectedText });
+        subName = r.title || selectedText.slice(0, 15);
+    } catch {
+        subName = selectedText.slice(0, 15);
+    }
+
+    if (deepDiveSourcePanel === 'sub') {
+        // Selection from right panel → new child goes under activeChildId
+        if (!activeChildId) return;
+        const parentId = activeChildId;
+        const subTopic = await api('/api/topics', 'POST', { name: subName, parent_id: parentId, source_node_id: selectedNodeId || null });
+
+        // Navigate into the active child (it becomes the new main)
+        navPath.push({ id: activeChildId, name: activeChildName });
+        currentTopicId = activeChildId;
+        currentTopicName = activeChildName;
+        activeChildId = null;
+        activeChildName = '';
+
+        const mainData = await api(`/api/topics/${currentTopicId}/tree`);
+        currentNodes = mainData.nodes;
+        renderMainChat();
+        renderBreadcrumb();
+
+        // Reload topics & children (newly created sub-topic should now be a child)
+        await loadTopics();
+        childTopics = allTopics.filter(t => t.parent_id === currentTopicId);
+        renderChildTabs();
+        await switchChild(subTopic.id, subTopic.name);
+
+        // Auto-ask in the new child
+        const q = `请详细解释: ${selectedText}`;
+        isAskingSub = true;
+        await streamAsk(subTopic.id, q, document.getElementById('subPanelMessages'), subNodes);
+        isAskingSub = false;
+    } else {
+        // Selection from main panel → new child goes under currentTopicId
+        const subTopic = await api('/api/topics', 'POST', { name: subName, parent_id: currentTopicId, source_node_id: selectedNodeId || null });
+        expandedTopics.add(currentTopicId);
+        await loadTopics();
+        childTopics = allTopics.filter(t => t.parent_id === currentTopicId);
+        renderChildTabs();
+        await switchChild(subTopic.id, subTopic.name);
+
+        const q = `请详细解释: ${selectedText}`;
+        isAskingSub = true;
+        await streamAsk(subTopic.id, q, document.getElementById('subPanelMessages'), subNodes);
+        isAskingSub = false;
+    }
+}
+
+async function deepDiveFromNode() {
+    const nodeId    = selectedNodeId;
+    const topicId   = selectedNodeTopicId;
+    closeModals();
+
+    if (!topicId) return;
+
+    // Navigate to the topic that contains this node
+    await makeTopicMain(topicId);
+    switchTab('chat');
+
+    // Wait for tab/panel to be visible, then scroll + flash 3x
+    setTimeout(() => {
+        const el = document.querySelector(`.message-ai[data-node-id="${nodeId}"]`);
+        if (!el) return;
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => {
+            document.querySelectorAll('.node-flash').forEach(n => n.classList.remove('node-flash'));
+            void el.offsetWidth;
+            el.classList.add('node-flash');
+            el.addEventListener('animationend', () => el.classList.remove('node-flash'), { once: true });
+        }, 300);
+    }, 120);
+}
+
+// ═══════════════════════ DRAG & DROP ═══════════════════════
+let _dragCounter = 0;
+
+function initDragDrop() {
+    const zone = document.getElementById('mainArea');
+
+    zone.addEventListener('dragenter', e => {
+        if (!e.dataTransfer.types.includes('Files')) return;
+        e.preventDefault();
+        _dragCounter++;
+        if (_dragCounter === 1) document.getElementById('dropOverlay').classList.add('active');
+    });
+
+    zone.addEventListener('dragover', e => {
+        if (!e.dataTransfer.types.includes('Files')) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'copy';
+    });
+
+    zone.addEventListener('dragleave', e => {
+        _dragCounter--;
+        if (_dragCounter <= 0) {
+            _dragCounter = 0;
+            document.getElementById('dropOverlay').classList.remove('active');
+        }
+    });
+
+    zone.addEventListener('drop', e => {
+        e.preventDefault();
+        _dragCounter = 0;
+        document.getElementById('dropOverlay').classList.remove('active');
+        const files = e.dataTransfer.files;
+        if (files.length === 0) return;
+        // Process first file (could extend to multiple later)
+        handleDroppedFile(files[0]);
+    });
+}
+
+function handleDroppedFile(file) {
+    const isImage = file.type.startsWith('image/');
+    const isDoc = /\.(pdf|txt|md|markdown)$/i.test(file.name) ||
+                  ['text/plain', 'text/markdown', 'application/pdf'].includes(file.type);
+
+    if (isImage) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            attachedImageUrl  = e.target.result;
+            attachedImageName = file.name;
+            document.getElementById('imgPreviewThumb').src = attachedImageUrl;
+            document.getElementById('imgPreviewName').textContent =
+                file.name.length > 14 ? file.name.slice(0, 12) + '…' : file.name;
+            document.getElementById('imgPreviewBadge').style.display = 'flex';
+            document.getElementById('imgUploadBtn').classList.add('active-file');
+            // Focus input so user can type a question
+            document.getElementById('questionInput').focus();
+        };
+        reader.readAsDataURL(file);
+        return;
+    }
+
+    if (isDoc) {
+        const badge = document.getElementById('fileBadge');
+        const nameEl = document.getElementById('fileNameLabel');
+        nameEl.textContent = '上传中…';
+        badge.style.display = 'flex';
+        const formData = new FormData();
+        formData.append('file', file);
+        fetch('/api/upload', { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(data => {
+                attachedFileText = data.text;
+                attachedFileName = data.filename;
+                nameEl.textContent = data.filename.length > 16 ? data.filename.slice(0, 14) + '…' : data.filename;
+                document.getElementById('attachBtn').classList.add('active-file');
+                document.getElementById('questionInput').focus();
+            })
+            .catch(err => {
+                badge.style.display = 'none';
+                alert('文件解析失败: ' + err.message);
+            });
+        return;
+    }
+
+    // Fallback: try reading as plain text
+    const reader = new FileReader();
+    reader.onload = e => {
+        attachedFileText = e.target.result;
+        attachedFileName = file.name;
+        document.getElementById('fileNameLabel').textContent =
+            file.name.length > 16 ? file.name.slice(0, 14) + '…' : file.name;
+        document.getElementById('fileBadge').style.display = 'flex';
+        document.getElementById('attachBtn').classList.add('active-file');
+        document.getElementById('questionInput').focus();
+    };
+    reader.onerror = () => alert('不支持的文件格式，请上传图片或 PDF / TXT / MD 文档。');
+    reader.readAsText(file);
+}
+
+// ═══════════════════════ IMAGE UPLOAD ═══════════════════════
+function handleImageSelect(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) { alert('图片大小不能超过 20MB'); input.value = ''; return; }
+
+    const reader = new FileReader();
+    reader.onload = e => {
+        attachedImageUrl  = e.target.result;
+        attachedImageName = file.name;
+        document.getElementById('imgPreviewThumb').src = attachedImageUrl;
+        document.getElementById('imgPreviewName').textContent = file.name.length > 14 ? file.name.slice(0,12)+'…' : file.name;
+        document.getElementById('imgPreviewBadge').style.display = 'flex';
+        document.getElementById('imgUploadBtn').classList.add('active-file');
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
+}
+
+function removeImage() {
+    attachedImageUrl  = null;
+    attachedImageName = null;
+    document.getElementById('imgPreviewBadge').style.display = 'none';
+    document.getElementById('imgUploadBtn').classList.remove('active-file');
+}
+
+function openLightbox(src) {
+    document.getElementById('lightboxImg').src = src;
+    document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('open');
+}
+
+// ═══════════════════════ FILE UPLOAD ═══════════════════════
+async function handleFileSelect(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const attachBtn = document.getElementById('attachBtn');
+    attachBtn.classList.add('active-file');
+
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('/api/upload', { method: 'POST', body: formData });
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        attachedFileText = data.text;
+        attachedFileName = data.filename;
+        document.getElementById('fileNameLabel').textContent = data.filename;
+        document.getElementById('fileBadge').style.display = 'flex';
+    } catch (e) {
+        alert('文件上传失败: ' + e.message);
+        attachBtn.classList.remove('active-file');
+    }
+    input.value = '';
+}
+
+function removeFile() {
+    attachedFileText = null;
+    attachedFileName = null;
+    document.getElementById('fileBadge').style.display = 'none';
+    document.getElementById('attachBtn').classList.remove('active-file');
+}
+
+// ═══════════════════════ VOICE INPUT ═══════════════════════
+async function toggleVoice() {
+    if (isRecording) {
+        stopVoice();
+    } else {
+        await startVoice();
+    }
+}
+
+async function startVoice() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+            ? 'audio/webm;codecs=opus'
+            : 'audio/webm';
+        mediaRecorder = new MediaRecorder(stream, { mimeType });
+        audioChunks = [];
+        mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+        mediaRecorder.onstop = sendAudioForTranscription;
+        mediaRecorder.start();
+        isRecording = true;
+        document.getElementById('voiceBtn').classList.add('recording');
+        document.getElementById('voiceBtn').title = '点击停止录音';
+    } catch (e) {
+        alert('无法访问麦克风: ' + e.message);
+    }
+}
+
+function stopVoice() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        mediaRecorder.stream.getTracks().forEach(t => t.stop());
+    }
+    isRecording = false;
+    document.getElementById('voiceBtn').classList.remove('recording');
+    document.getElementById('voiceBtn').title = '语音输入';
+}
+
+async function sendAudioForTranscription() {
+    const blob = new Blob(audioChunks, { type: 'audio/webm' });
+    const formData = new FormData();
+    formData.append('file', blob, 'recording.webm');
+    const voiceBtn = document.getElementById('voiceBtn');
+    voiceBtn.style.opacity = '0.5';
+    try {
+        const res = await fetch('/api/transcribe', { method: 'POST', body: formData });
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        const ta = document.getElementById('questionInput');
+        ta.value += (ta.value ? ' ' : '') + data.text;
+        ta.dispatchEvent(new Event('input'));
+        ta.focus();
+    } catch (e) {
+        alert('语音识别失败: ' + e.message);
+    } finally {
+        voiceBtn.style.opacity = '1';
+    }
+}
+
+// ═══════════════════════ TTS ═══════════════════════
+let currentAudio = null;
+
+async function speakMessage(btn) {
+    const text = btn.dataset.text;
+    if (!text) return;
+
+    if (currentAudio && !currentAudio.paused) {
+        currentAudio.pause();
+        currentAudio = null;
+        btn.textContent = '朗读';
+        return;
+    }
+
+    btn.textContent = '…';
+    try {
+        const res = await fetch('/api/tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text }),
+        });
+        if (!res.ok) throw new Error(await res.text());
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        currentAudio = new Audio(url);
+        currentAudio.onended = () => { btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg> 朗读`; };
+        currentAudio.play();
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> 停止`;
+    } catch (e) {
+        alert('TTS 失败: ' + e.message);
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg> 朗读`;
+    }
+}
+
+function copyText(text) {
+    navigator.clipboard.writeText(text).then(() => {}).catch(() => {});
+}
+
+// ═══════════════════════ TREE VIEW ═══════════════════════
+let _treeZoom = null;
+let _treeSvgSel = null;
+let _treeInitTransform = null;
+
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    document.getElementById('panelChat').classList.toggle('active', tab === 'chat');
+    document.getElementById('panelTree').classList.toggle('active', tab === 'tree');
+    if (tab === 'tree') renderTree();
+}
+
+function resetTreeView() {
+    if (_treeZoom && _treeSvgSel && _treeInitTransform) {
+        _treeSvgSel.transition().duration(400).call(_treeZoom.transform, _treeInitTransform);
+    }
+}
+
+// Build D3-compatible hierarchy from full-tree API response
+function buildFullTreeData(ft) {
+    // Unified processor for both the root topic and any sub-topic level.
+    // nodeType: 'node' for root level, 'subnode' for any nested level.
+    function processLevel(data, nodeType) {
+        // Build a flat map of all nodes at this level
+        const nodeMap = {};
+        data.nodes.forEach(n => {
+            nodeMap[n.id] = {
+                id: n.id,
+                _type: nodeType,
+                _label: n.title || n.question,
+                _question: n.question,
+                answer: n.answer,
+                _topicId: n.topic_id,
+                children: [],
+            };
+        });
+
+        // Wire up node parent-child relationships (questions can have sub-questions)
+        const nodeRoots = [];
+        data.nodes.forEach(n => {
+            if (n.parent_id && nodeMap[n.parent_id]) nodeMap[n.parent_id].children.push(nodeMap[n.id]);
+            else nodeRoots.push(nodeMap[n.id]);
+        });
+
+        // Process sub-topics:
+        // - if sub-topic has source_node_id → attach under that node
+        // - otherwise → attach directly under this topic
+        const directSubKids = [];
+        data.subtopics.forEach(st => {
+            const processed = processLevel(st, 'subnode');
+            processed._type     = 'subtopic';
+            processed._topicId  = st.topic.id;
+            processed._label    = st.topic.name;
+            processed.id        = `topic-${st.topic.id}`;
+
+            const srcId = st.topic.source_node_id;
+            if (srcId && nodeMap[srcId]) {
+                nodeMap[srcId].children.push(processed);
+            } else {
+                directSubKids.push(processed);
+            }
+        });
+
+        return {
+            id: `topic-${data.topic.id}`,
+            _type: nodeType === 'node' ? 'root' : 'subtopic',
+            _topicId: data.topic.id,
+            _label: data.topic.name,
+            children: [...nodeRoots, ...directSubKids],
+        };
+    }
+
+    return processLevel(ft, 'node');
+}
+
+async function renderTree() {
+    const svgEl = document.getElementById('treeSvg');
+    const svg = d3.select('#treeSvg');
+    svg.selectAll('*').remove();
+    document.getElementById('treeResetBtn').style.display = 'none';
+    if (!currentTopicId) return;
+
+    svg.append('text')
+        .attr('x','50%').attr('y','50%').attr('text-anchor','middle').attr('dominant-baseline','middle')
+        .attr('fill','var(--text-tertiary)').attr('font-size','12px').attr('font-family','Inter,sans-serif')
+        .text('加载中…');
+
+    // Always render from root so sub-topics share the same tree
+    const rootId = navPath.length > 0 ? navPath[0].id : currentTopicId;
+
+    let ft;
+    try {
+        const res = await fetch(`/api/topics/${rootId}/full-tree`);
+        if (!res.ok) throw new Error();
+        ft = await res.json();
+    } catch {
+        svg.selectAll('text').text('加载失败，请重试');
+        return;
+    }
+
+    svg.selectAll('*').remove();
+
+    if (ft.nodes.length === 0 && ft.subtopics.length === 0) {
+        svg.append('text')
+            .attr('x','50%').attr('y','50%').attr('text-anchor','middle').attr('dominant-baseline','middle')
+            .attr('fill','var(--text-tertiary)').attr('font-size','13px').attr('font-family','Inter,sans-serif')
+            .text('暂无学习节点，开始提问后将在此展示知识树');
+        return;
+    }
+
+    const treeData = buildFullTreeData(ft);
+    const root = d3.hierarchy(treeData);
+
+    // Adaptive node heights based on type
+    const nodeH = d => d.data._type === 'root' ? 44 : d.data._type === 'subtopic' ? 38 : 34;
+
+    // Generous spacing: more gap between different subtrees
+    d3.tree()
+        .nodeSize([58, 220])
+        .separation((a, b) => {
+            if (a.parent !== b.parent) return 1.6;
+            const bothLeaf = !a.children && !b.children;
+            return bothLeaf ? 1.1 : 1.3;
+        })(root);
+
+    // Compact: shift non-root subtrees closer to root
+    root.each(d => { if (d.depth > 0) d.y = d.depth * 210; });
+
+    const W = svgEl.clientWidth  || 800;
+    const H = svgEl.clientHeight || 600;
+
+    let xMin=Infinity, xMax=-Infinity, yMin=Infinity, yMax=-Infinity;
+    root.each(d => {
+        xMin = Math.min(xMin, d.x); xMax = Math.max(xMax, d.x);
+        yMin = Math.min(yMin, d.y); yMax = Math.max(yMax, d.y);
+    });
+
+    const pad = 90;
+    const totalH = xMax - xMin + pad * 2;
+    const totalW = yMax - yMin + pad * 2 + 180;
+    const scale = Math.min(W / totalW, H / totalH, 1.05) * 0.86;
+    const tx = (W - totalW * scale) / 2 + (pad - yMin) * scale;
+    const ty = (H - (xMax - xMin) * scale) / 2 - xMin * scale;
+    const initT = d3.zoomIdentity.translate(tx, ty).scale(scale);
+
+    // ── Defs ──
+    const defs = svg.append('defs');
+    const glowF = defs.append('filter').attr('id','tglow').attr('x','-30%').attr('y','-30%').attr('width','160%').attr('height','160%');
+    glowF.append('feGaussianBlur').attr('stdDeviation','4').attr('result','blur');
+    const fm = glowF.append('feMerge');
+    fm.append('feMergeNode').attr('in','blur');
+    fm.append('feMergeNode').attr('in','SourceGraphic');
+
+    // Subtle dot-grid bg
+    const pat = defs.append('pattern').attr('id','dotgrid').attr('width',28).attr('height',28).attr('patternUnits','userSpaceOnUse');
+    pat.append('circle').attr('cx',1).attr('cy',1).attr('r',0.8).attr('fill','rgba(255,255,255,0.03)');
+    svg.insert('rect','g').attr('width','100%').attr('height','100%').attr('fill','url(#dotgrid)');
+
+    const g = svg.append('g');
+    _treeSvgSel = svg;
+
+    const zoom = d3.zoom().scaleExtent([0.1, 4]).on('zoom', e => g.attr('transform', e.transform));
+    svg.call(zoom);
+    svg.call(zoom.transform, initT);
+    _treeZoom = zoom;
+    _treeInitTransform = initT;
+    document.getElementById('treeResetBtn').style.display = 'block';
+
+    // ── Helpers ──
+    const NW = d => d.data._type === 'root' ? 120 : d.data._type === 'subtopic' ? 130 : 144;
+    const NH = d => d.data._type === 'root' ? 40  : 32;
+
+    // ── Links (S-curve from right edge → left edge) ──
+    // Current nav path IDs (root → current topic, all ancestors lit up)
+    const pathIds = new Set(navPath.map(p => p.id));
+
+    // Helper: is this node on the active path?
+    const onPath = d => d.data._topicId != null && pathIds.has(d.data._topicId);
+    const isCurrent = d => d.data._topicId === currentTopicId;
+    const isChild   = d => d.data._topicId === activeChildId;
+
+    g.selectAll('.tree-link')
+        .data(root.links())
+        .join('path').attr('class','tree-link')
+        .attr('stroke', d => {
+            // Light up link if its target is on the active path
+            if (isCurrent(d.target))            return 'rgba(45,212,191,0.95)';
+            if (isChild(d.target))              return 'rgba(251,191,36,0.85)';
+            if (onPath(d.target))               return 'rgba(45,212,191,0.55)';
+            const t = d.target.data._type;
+            return t === 'subtopic' ? 'rgba(244,162,97,0.45)'
+                 : t === 'subnode'  ? 'rgba(244,162,97,0.18)'
+                 : 'rgba(45,212,191,0.25)';
+        })
+        .attr('stroke-width', d => {
+            if (isCurrent(d.target) || isChild(d.target)) return 2;
+            if (onPath(d.target)) return 1.5;
+            return 1;
+        })
+        .attr('d', d => {
+            const sx = d.source.y + NW(d.source) / 2, sy = d.source.x;
+            const ex = d.target.y - NW(d.target) / 2, ey = d.target.x;
+            const mx = (sx + ex) / 2;
+            return `M${sx},${sy} C${mx},${sy} ${mx},${ey} ${ex},${ey}`;
+        });
+
+    // ── Nodes ──
+    const node = g.selectAll('.tree-node')
+        .data(root.descendants())
+        .join('g').attr('class','tree-node')
+        .attr('transform', d => `translate(${d.y},${d.x})`)
+        .style('cursor', 'pointer')
+        .on('click', (e, d) => {
+            if (d.data._type === 'root' || d.data._type === 'subtopic') {
+                makeTopicMain(d.data._topicId);
+                return;
+            }
+            showNodeDetail({ id: d.data.id, question: d.data._question || d.data._label, answer: d.data.answer || '', _topicId: d.data._topicId });
+        });
+
+    // Glow halo for current topic + root
+    node.filter(d => isCurrent(d) || d.data._type === 'root')
+        .append('rect')
+        .attr('x', d => -NW(d)/2-6).attr('y', d => -NH(d)/2-6)
+        .attr('width', d => NW(d)+12).attr('height', d => NH(d)+12)
+        .attr('rx', 14)
+        .attr('fill', d => isCurrent(d) ? 'rgba(45,212,191,0.15)' : 'rgba(45,212,191,0.08)')
+        .attr('stroke','none')
+        .attr('filter','url(#tglow)');
+
+    // Path-ancestor halo (dimmer glow for ancestor subtopics)
+    node.filter(d => onPath(d) && !isCurrent(d) && d.data._type === 'subtopic')
+        .append('rect')
+        .attr('x', d => -NW(d)/2-4).attr('y', d => -NH(d)/2-4)
+        .attr('width', d => NW(d)+8).attr('height', d => NH(d)+8)
+        .attr('rx', 12).attr('fill','rgba(45,212,191,0.07)').attr('stroke','none');
+
+    // Background rect
+    node.append('rect')
+        .attr('x', d => -NW(d)/2).attr('y', d => -NH(d)/2)
+        .attr('width', d => NW(d)).attr('height', d => NH(d)).attr('rx', 9)
+        .attr('fill', d => {
+            if (isCurrent(d))                return 'rgba(6,78,59,0.97)';
+            if (isChild(d))                  return 'rgba(78,52,6,0.97)';
+            if (onPath(d))                   return 'rgba(10,60,48,0.93)';
+            if (d.data._type === 'root')     return 'rgba(13,96,85,0.95)';
+            if (d.data._type === 'subtopic') return 'rgba(92,40,8,0.88)';
+            if (d.data._type === 'subnode')  return 'rgba(30,22,16,0.92)';
+            return 'rgba(22,24,38,0.95)';
+        })
+        .attr('stroke', d => {
+            if (isCurrent(d))               return '#2dd4bf';
+            if (isChild(d))                 return '#fbbf24';
+            if (onPath(d))                  return 'rgba(45,212,191,0.65)';
+            if (d.data._type === 'root')     return 'rgba(45,212,191,0.88)';
+            if (d.data._type === 'subtopic') return 'rgba(244,162,97,0.8)';
+            if (d.data._type === 'subnode')  return 'rgba(244,162,97,0.28)';
+            return 'rgba(255,255,255,0.1)';
+        })
+        .attr('stroke-width', d => {
+            if (isCurrent(d) || isChild(d)) return 2.5;
+            if (onPath(d))                  return 1.8;
+            return d.data._type === 'root' ? 1.5 : 1;
+        });
+
+    // Pulsing ring on current topic node ("you are here")
+    node.filter(d => isCurrent(d))
+        .append('rect').attr('class','tree-pulse-ring')
+        .attr('x', d => -NW(d)/2 - 1).attr('y', d => -NH(d)/2 - 1)
+        .attr('width', d => NW(d) + 2).attr('height', d => NH(d) + 2)
+        .attr('rx', 10).attr('fill', 'none')
+        .attr('stroke', 'rgba(45,212,191,0.9)').attr('stroke-width', 2.5);
+
+    // Left accent stripe
+    node.filter(d => d.data._type !== 'root')
+        .append('rect')
+        .attr('x', d => -NW(d)/2).attr('y', d => -NH(d)/2+5)
+        .attr('width', 3).attr('height', d => NH(d)-10).attr('rx', 2)
+        .attr('fill', d => d.data._type === 'subtopic' || d.data._type === 'subnode'
+            ? 'rgba(244,162,97,0.7)' : 'rgba(45,212,191,0.55)');
+
+    // Leaf indicator dot
+    node.filter(d => !d.children || d.children.length === 0)
+        .append('circle')
+        .attr('cx', d => NW(d)/2-9).attr('cy', 0).attr('r', 3)
+        .attr('fill', d => d.data._type === 'subtopic' || d.data._type === 'subnode'
+            ? 'rgba(244,162,97,0.6)' : 'rgba(45,212,191,0.55)');
+
+    // Sub-topic arrow icon
+    node.filter(d => d.data._type === 'subtopic')
+        .append('text')
+        .attr('x', d => -NW(d)/2+14).attr('y', 0)
+        .attr('text-anchor','middle').attr('dominant-baseline','middle')
+        .attr('font-size', 11).attr('fill','rgba(244,162,97,0.8)').text('⤷');
+
+    // Label text
+    node.append('text')
+        .attr('x', d => d.data._type === 'subtopic' ? 7 : 0)
+        .attr('text-anchor','middle').attr('dominant-baseline','middle')
+        .attr('font-family','Inter,sans-serif')
+        .attr('font-size', d => d.data._type === 'root' ? 12.5 : 11)
+        .attr('font-weight', d => d.data._type === 'root' ? 600 : 400)
+        .attr('fill', d => {
+            if (d.data._type === 'root')     return '#b2f5ea';
+            if (d.data._type === 'subtopic') return '#fcd9b5';
+            if (d.data._type === 'subnode')  return '#c8b49a';
+            return '#8890a8';
+        })
+        .text(d => {
+            const lbl = d.data._label || '';
+            const max = d.data._type === 'root' ? 12 : d.data._type === 'subtopic' ? 11 : 12;
+            return lbl.length > max ? lbl.slice(0, max) + '…' : lbl;
+        });
+}
+
+let selectedNodeTopicId = null;
+
+function showNodeDetail(nd) {
+    selectedNodeId = nd.id;
+    selectedNodeTopicId = nd.topic_id ?? nd._topicId ?? null;
+    document.getElementById('nodeDetailQuestion').textContent = nd.question;
+    document.getElementById('nodeDetailAnswer').innerHTML = renderMarkdown(nd.answer);
+    document.getElementById('nodeDetail').style.display = 'block';
+    document.getElementById('overlay').style.display = 'block';
+    renderLatex(document.getElementById('nodeDetailAnswer'));
+}
+
+// ═══════════════════════ RAG SEARCH ═══════════════════════
+async function searchRag() {
+    const input = document.getElementById('ragInput');
+    const query = input.value.trim();
+    if (!query) return;
+    input.value = '';
+    document.getElementById('ragAnswer').innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div> <span style="color:var(--text-tertiary);font-size:12px;">搜索中…</span>';
+    document.getElementById('ragSources').innerHTML = '';
+    document.getElementById('ragModal').style.display = 'block';
+    document.getElementById('overlay').style.display = 'block';
+    try {
+        const data = await api('/api/rag/search', 'POST', { query, topic_id: currentTopicId });
+        document.getElementById('ragAnswer').innerHTML = renderMarkdown(data.answer);
+        renderLatex(document.getElementById('ragAnswer'));
+        if (data.results.length > 0) {
+            document.getElementById('ragSources').innerHTML = '<strong>参考来源:</strong>' +
+                data.results.map(r => `<div class="rag-source-item">${escapeHtml(r.metadata.question || '')}</div>`).join('');
+        }
+    } catch (e) {
+        document.getElementById('ragAnswer').textContent = '搜索失败: ' + e.message;
+    }
+}
+
+// ═══════════════════════ SETTINGS ═══════════════════════
+async function openSettings() {
+    try {
+        const s = await api('/api/settings');
+        document.getElementById('settingsProvider').value = s.api_provider || 'openai';
+        document.getElementById('settingsBaseUrl').value = s.api_base_url || '';
+        document.getElementById('settingsBaseUrl').placeholder = s.effective_base_url || 'https://api.openai.com/v1';
+        document.getElementById('settingsApiKey').value = '';
+        document.getElementById('settingsApiKey').placeholder = s.has_custom_key ? s.api_key : (s.has_env_key ? '已配置环境变量' : '未配置');
+        document.getElementById('settingsModel').value = s.api_model || '';
+        document.getElementById('settingsModel').placeholder = s.effective_model || 'gpt-4o';
+        document.getElementById('settingsKeyHint').textContent = s.has_custom_key ? '已设置自定义 Key，留空保持不变' : (s.has_env_key ? '环境已配置，留空使用环境值' : '留空则使用环境默认值');
+    } catch {}
+    document.getElementById('settingsModal').style.display = 'block';
+    document.getElementById('overlay').style.display = 'block';
+}
+
+function onProviderChange() {
+    const p = document.getElementById('settingsProvider').value;
+    document.getElementById('settingsBaseUrl').placeholder = p === 'claude' ? 'https://api.anthropic.com/v1' : 'https://api.openai.com/v1';
+    document.getElementById('settingsModel').placeholder = p === 'claude' ? 'claude-sonnet-4-20250514' : 'gpt-4o';
+}
+
+async function saveSettings() {
+    const status = document.getElementById('settingsStatus');
+    try {
+        await api('/api/settings', 'POST', {
+            api_provider: document.getElementById('settingsProvider').value,
+            api_base_url: document.getElementById('settingsBaseUrl').value.trim(),
+            api_key: document.getElementById('settingsApiKey').value.trim(),
+            api_model: document.getElementById('settingsModel').value.trim(),
+        });
+        status.textContent = '已保存'; status.className = 'settings-status success';
+        setTimeout(() => { status.textContent = ''; }, 2000);
+    } catch (e) {
+        status.textContent = '保存失败: ' + e.message; status.className = 'settings-status error';
+    }
+}
+
+async function resetSettings() {
+    if (!confirm('确定恢复为环境默认配置？')) return;
+    const status = document.getElementById('settingsStatus');
+    try {
+        await api('/api/settings/reset', 'POST');
+        status.textContent = '已恢复默认'; status.className = 'settings-status success';
+        ['settingsBaseUrl','settingsApiKey','settingsModel'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('settingsProvider').value = 'openai';
+        setTimeout(() => { status.textContent = ''; }, 2000);
+    } catch (e) {
+        status.textContent = '重置失败: ' + e.message; status.className = 'settings-status error';
+    }
+}
+
+function closeModals() {
+    ['nodeDetail','ragModal','settingsModal'].forEach(id => document.getElementById(id).style.display = 'none');
+    document.getElementById('overlay').style.display = 'none';
+}
+
+// ═══════════════════════ TEXTAREA SETUP (auto-resize + IME-safe Enter) ═══════════════════════
+[
+    { id: 'questionInput',  action: () => askQuestion() },
+    { id: 'subPanelInput',  action: () => askInSubPanel() },
+    { id: 'newTopicInput',  action: () => createTopic(), isInput: true },
+].forEach(({ id, action, isInput }) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    // Auto-resize (only for textareas, not plain inputs)
+    if (!isInput) {
+        el.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 140) + 'px';
+        });
+    }
+
+    // IME-safe Enter: track composition state
+    let composing = false;
+    el.addEventListener('compositionstart', () => { composing = true; });
+    el.addEventListener('compositionend',   () => { composing = false; });
+
+    el.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey && !composing) {
+            e.preventDefault();
+            action();
+        }
+    });
+});
+
+// ═══════════════════════ PANEL RESIZE ═══════════════════════
+(function initPanelResize() {
+    const handle   = document.getElementById('panelResizeHandle');
+    const subPanel = document.getElementById('subPanel');
+    const MIN_W = 220, MAX_W = 720;
+
+    // Restore saved width
+    const saved = localStorage.getItem('subPanelWidth');
+    if (saved) subPanel.style.width = saved + 'px';
+
+    let dragging = false, startX = 0, startW = 0;
+
+    handle.addEventListener('mousedown', e => {
+        dragging = true;
+        startX = e.clientX;
+        startW = subPanel.offsetWidth;
+        handle.classList.add('dragging');
+        document.body.style.cursor    = 'col-resize';
+        document.body.style.userSelect = 'none';
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', e => {
+        if (!dragging) return;
+        const delta  = startX - e.clientX;          // drag left = sub-panel grows
+        const newW   = Math.min(MAX_W, Math.max(MIN_W, startW + delta));
+        subPanel.style.width = newW + 'px';
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (!dragging) return;
+        dragging = false;
+        handle.classList.remove('dragging');
+        document.body.style.cursor     = '';
+        document.body.style.userSelect = '';
+        localStorage.setItem('subPanelWidth', subPanel.offsetWidth);
+    });
+})();
+
+// ═══════════════════════ INIT ═══════════════════════
+loadTopics();
+initDragDrop();
+</script>
+</body>
+</html>

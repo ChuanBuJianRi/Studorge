@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f1518"/>
+      <stop offset="100%" stop-color="#0a0e11"/>
+    </linearGradient>
+    <linearGradient id="teal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0d9488"/>
+      <stop offset="50%" stop-color="#14b8a6"/>
+      <stop offset="100%" stop-color="#2dd4bf"/>
+    </linearGradient>
+    <linearGradient id="tealLight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2dd4bf"/>
+      <stop offset="100%" stop-color="#5eead4"/>
+    </linearGradient>
+    <linearGradient id="warm" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f4a261"/>
+      <stop offset="100%" stop-color="#e76f51"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="glowSmall">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softShadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="108" fill="url(#bgGrad)"/>
+
+  <!-- Subtle inner border -->
+  <rect x="3" y="3" width="506" height="506" rx="106" fill="none" stroke="#2dd4bf" stroke-width="1" opacity="0.08"/>
+
+  <!-- Knowledge tree connections (behind nodes) -->
+  <!-- Main trunk -->
+  <path d="M 256 130 L 256 200" stroke="url(#teal)" stroke-width="3" opacity="0.25" stroke-linecap="round"/>
+  <!-- Left branch -->
+  <path d="M 256 200 Q 200 230 156 270" stroke="url(#teal)" stroke-width="2.5" opacity="0.2" stroke-linecap="round" fill="none"/>
+  <!-- Right branch -->
+  <path d="M 256 200 Q 312 230 356 270" stroke="url(#teal)" stroke-width="2.5" opacity="0.2" stroke-linecap="round" fill="none"/>
+  <!-- Far left -->
+  <path d="M 156 270 Q 130 295 112 320" stroke="url(#teal)" stroke-width="2" opacity="0.12" stroke-linecap="round" fill="none"/>
+  <!-- Mid left -->
+  <path d="M 156 270 Q 170 300 186 330" stroke="url(#teal)" stroke-width="2" opacity="0.12" stroke-linecap="round" fill="none"/>
+  <!-- Mid right -->
+  <path d="M 356 270 Q 342 300 326 330" stroke="url(#teal)" stroke-width="2" opacity="0.12" stroke-linecap="round" fill="none"/>
+  <!-- Far right -->
+  <path d="M 356 270 Q 382 295 400 320" stroke="url(#teal)" stroke-width="2" opacity="0.12" stroke-linecap="round" fill="none"/>
+
+  <!-- Knowledge nodes -->
+  <!-- Root node (top) -->
+  <circle cx="256" cy="124" r="14" fill="url(#teal)" filter="url(#glow)" opacity="0.9"/>
+  <circle cx="256" cy="124" r="6" fill="#0f1518" opacity="0.4"/>
+
+  <!-- Level 2 nodes -->
+  <circle cx="152" cy="274" r="10" fill="url(#tealLight)" filter="url(#glowSmall)" opacity="0.65"/>
+  <circle cx="360" cy="274" r="10" fill="url(#tealLight)" filter="url(#glowSmall)" opacity="0.65"/>
+
+  <!-- Level 3 leaf nodes -->
+  <circle cx="108" cy="324" r="7" fill="url(#tealLight)" opacity="0.35"/>
+  <circle cx="182" cy="336" r="7" fill="url(#tealLight)" opacity="0.35"/>
+  <circle cx="330" cy="336" r="7" fill="url(#tealLight)" opacity="0.35"/>
+  <circle cx="404" cy="324" r="7" fill="url(#tealLight)" opacity="0.35"/>
+
+  <!-- Central S letterform -->
+  <g filter="url(#softShadow)">
+    <path d="
+      M 296 195
+      C 296 175, 278 162, 256 162
+      C 234 162, 216 175, 216 192
+      C 216 210, 234 218, 256 224
+      C 278 230, 296 238, 296 256
+      C 296 273, 278 286, 256 286
+      C 234 286, 216 273, 216 253
+    " fill="none" stroke="url(#teal)" stroke-width="18" stroke-linecap="round" opacity="0.95"/>
+  </g>
+
+  <!-- S highlight stroke (inner glow effect) -->
+  <path d="
+    M 296 195
+    C 296 175, 278 162, 256 162
+    C 234 162, 216 175, 216 192
+    C 216 210, 234 218, 256 224
+    C 278 230, 296 238, 296 256
+    C 296 273, 278 286, 256 286
+    C 234 286, 216 273, 216 253
+  " fill="none" stroke="#5eead4" stroke-width="4" stroke-linecap="round" opacity="0.3"/>
+
+  <!-- Decorative dots on S -->
+  <circle cx="296" cy="195" r="5" fill="url(#warm)" filter="url(#glowSmall)" opacity="0.8"/>
+  <circle cx="216" cy="253" r="5" fill="url(#warm)" filter="url(#glowSmall)" opacity="0.8"/>
+
+  <!-- Tagline bar -->
+  <rect x="176" y="370" width="160" height="1" fill="url(#teal)" opacity="0.15" rx="0.5"/>
+
+  <!-- Subtle brand text -->
+  <text x="256" y="402" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="28" font-weight="600" letter-spacing="6" fill="#2dd4bf" opacity="0.4">STUDORGE</text>
+</svg>
