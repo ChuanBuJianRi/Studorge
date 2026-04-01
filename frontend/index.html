@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Studorge - 智能学习系统</title>
+    <title>Studorge</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
+    <link rel="icon" type="image/png" href="/static/app-icon.png">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
@@ -70,22 +73,54 @@
         .logo {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             margin-bottom: 14px;
+            padding: 10px 12px;
+            margin-left: -6px;
+            margin-right: -6px;
+            border-radius: var(--radius-lg);
+            background: linear-gradient(155deg, rgba(255,255,255,0.028) 0%, rgba(255,255,255,0.01) 45%, rgba(45,212,191,0.025) 100%);
+            border: 1px solid rgba(255,255,255,0.045);
+            box-shadow: 0 1px 0 rgba(255,255,255,0.025) inset, 0 12px 36px -28px rgba(0,0,0,0.85);
         }
 
         .logo-icon {
-            width: 34px;
-            height: 34px;
-            border-radius: 9px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
             overflow: hidden;
             flex-shrink: 0;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.07);
         }
-        .logo-icon svg { width: 100%; height: 100%; display: block; }
+        .logo-icon svg,
+        .logo-icon img { width: 100%; height: 100%; display: block; object-fit: cover; }
 
-        .logo h1 { font-size: 15px; font-weight: 600; color: var(--text-primary); }
-        .logo span { font-size: 10px; color: var(--text-tertiary); display: block; margin-top: 1px; }
-
+        .logo-text { display: flex; flex-direction: column; gap: 0; min-width: 0; flex: 1; }
+        .logo h1.logo-wordmark {
+            font-size: 19px;
+            font-weight: 700;
+            letter-spacing: -0.055em;
+            line-height: 1.05;
+            margin: 0;
+            color: var(--text-primary);
+        }
+        .logo-wordmark .wm-base { color: var(--text-primary); }
+        .logo-wordmark .wm-accent {
+            background: linear-gradient(118deg, #9a6b78 0%, #5c7d8f 46%, #8a7d58 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .logo-wordmark::after {
+            content: '';
+            display: block;
+            width: 36px;
+            height: 2px;
+            margin-top: 6px;
+            border-radius: 2px;
+            background: linear-gradient(90deg, rgba(180,95,105,0.55), rgba(80,115,145,0.5), rgba(145,125,75,0.5));
+            opacity: 0.55;
+        }
         .new-topic-row { display: flex; gap: 7px; }
 
         .input-base {
@@ -402,6 +437,23 @@
             animation: cursorBlink 0.65s step-end infinite;
         }
         @keyframes cursorBlink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+        /* Live markdown during streaming */
+        .stream-live-md {
+            font-size: 13.5px;
+            line-height: 1.75;
+            color: var(--text-secondary);
+        }
+        .stream-live-md > *:last-child::after {
+            content: '';
+            display: inline-block;
+            width: 2px; height: 0.9em;
+            background: var(--accent);
+            margin-left: 2px;
+            vertical-align: text-bottom;
+            animation: cursorBlink 0.65s step-end infinite;
+            border-radius: 1px;
+        }
 
         /* Chat node: flash 3 times then stop */
         @keyframes nodeFlash {
@@ -897,25 +949,11 @@
     <div class="sidebar-header">
         <div class="logo">
             <div class="logo-icon">
-                <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <linearGradient id="lg1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0f1518"/><stop offset="100%" stop-color="#0a0e11"/></linearGradient>
-                        <linearGradient id="lg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0d9488"/><stop offset="100%" stop-color="#2dd4bf"/></linearGradient>
-                        <linearGradient id="lg3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f4a261"/><stop offset="100%" stop-color="#e76f51"/></linearGradient>
-                    </defs>
-                    <rect width="512" height="512" rx="108" fill="url(#lg1)"/>
-                    <path d="M256 130L256 200" stroke="url(#lg2)" stroke-width="3" opacity=".25" stroke-linecap="round"/>
-                    <path d="M256 200Q200 230 156 270" stroke="url(#lg2)" stroke-width="2.5" opacity=".2" stroke-linecap="round" fill="none"/>
-                    <path d="M256 200Q312 230 356 270" stroke="url(#lg2)" stroke-width="2.5" opacity=".2" stroke-linecap="round" fill="none"/>
-                    <circle cx="256" cy="124" r="14" fill="url(#lg2)" opacity=".9"/>
-                    <circle cx="152" cy="274" r="10" fill="url(#lg2)" opacity=".6"/>
-                    <circle cx="360" cy="274" r="10" fill="url(#lg2)" opacity=".6"/>
-                    <path d="M296 195C296 175,278 162,256 162C234 162,216 175,216 192C216 210,234 218,256 224C278 230,296 238,296 256C296 273,278 286,256 286C234 286,216 273,216 253" fill="none" stroke="url(#lg2)" stroke-width="20" stroke-linecap="round"/>
-                    <circle cx="296" cy="195" r="6" fill="url(#lg3)" opacity=".85"/>
-                    <circle cx="216" cy="253" r="6" fill="url(#lg3)" opacity=".85"/>
-                </svg>
+                <img src="/static/app-icon.png" alt="" width="40" height="40" decoding="async">
             </div>
-            <div><h1>Studorge</h1><span>AI-Powered Learning</span></div>
+            <div class="logo-text">
+                <h1 class="logo-wordmark"><span class="wm-base">Stud</span><span class="wm-accent">orge</span></h1>
+            </div>
         </div>
         <div class="new-topic-row">
             <input type="text" class="input-base" id="newTopicInput" placeholder="新专题名称...">
@@ -1607,7 +1645,16 @@ async function streamAsk(topicId, question, container, nodesList, onDone, imageU
     const aiEl = document.getElementById(`${msgId}-ai`);
     let rawAnswer = '';
     let isThinking = true;
-    let textEl = null;
+    let streamWrapEl = null;
+    let _rafId = null;
+
+    const flushMd = () => {
+        _rafId = null;
+        if (!streamWrapEl) return;
+        try { streamWrapEl.innerHTML = marked.parse(rawAnswer); }
+        catch { streamWrapEl.textContent = rawAnswer; }
+        container.scrollTop = container.scrollHeight;
+    };
 
     try {
         const payload = { topic_id: topicId, question, node_type: 'question', response_length: responseLength };
@@ -1637,7 +1684,8 @@ async function streamAsk(topicId, question, container, nodesList, onDone, imageU
                 try { data = JSON.parse(line.slice(6)); } catch { continue; }
 
                 if (data.error) {
-                    aiEl.querySelector('.thinking-indicator,#stream-text-wrap')?.remove();
+                    aiEl.querySelector('.thinking-indicator')?.remove();
+                    streamWrapEl?.remove();
                     aiEl.insertAdjacentHTML('beforeend', `<span style="color:var(--red)">请求失败: ${escapeHtml(data.error)}</span>`);
                     break;
                 }
@@ -1646,21 +1694,20 @@ async function streamAsk(topicId, question, container, nodesList, onDone, imageU
                     if (isThinking) {
                         isThinking = false;
                         aiEl.querySelector('.thinking-indicator').remove();
-                        aiEl.insertAdjacentHTML('beforeend',
-                            `<div id="stream-text-wrap"><span id="stream-text-${msgId}" style="white-space:pre-wrap;font-size:13.5px;line-height:1.75;color:var(--text-secondary)"></span><span class="stream-cursor"></span></div>`
-                        );
-                        textEl = document.getElementById(`stream-text-${msgId}`);
+                        aiEl.insertAdjacentHTML('beforeend', `<div class="stream-live-md" id="stream-wrap-${msgId}"></div>`);
+                        streamWrapEl = document.getElementById(`stream-wrap-${msgId}`);
                     }
                     rawAnswer += data.token;
-                    if (textEl) textEl.textContent = rawAnswer;
-                    container.scrollTop = container.scrollHeight;
+                    // throttle render to rAF (≈60fps max)
+                    if (!_rafId) _rafId = requestAnimationFrame(flushMd);
                 }
 
                 if (data.done) {
-                    document.getElementById('stream-text-wrap')?.remove();
+                    if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
+                    streamWrapEl?.remove();
+                    streamWrapEl = null;
                     aiEl.insertAdjacentHTML('beforeend', renderMarkdown(rawAnswer));
                     aiEl.dataset.nodeId = data.node.id;
-                    // add action buttons
                     aiEl.insertAdjacentHTML('beforeend', `
                         <div class="message-actions">
                             <button class="action-btn" onclick="speakMessage(this)" data-text="${escapeHtml(rawAnswer)}" title="朗读">
@@ -1680,8 +1727,10 @@ async function streamAsk(topicId, question, container, nodesList, onDone, imageU
             }
         }
     } catch (e) {
+        if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
         if (aiEl) {
-            aiEl.querySelector('.thinking-indicator,#stream-text-wrap')?.remove();
+            aiEl.querySelector('.thinking-indicator')?.remove();
+            streamWrapEl?.remove();
             aiEl.insertAdjacentHTML('beforeend', `<span style="color:var(--red)">请求失败: ${escapeHtml(e.message)}</span>`);
         }
     }
@@ -2280,6 +2329,14 @@ async function renderTree() {
     const NW = d => d.data._type === 'root' ? 120 : d.data._type === 'subtopic' ? 130 : 144;
     const NH = d => d.data._type === 'root' ? 40  : 32;
 
+    // ── Link path helper (extracted so drag can redraw) ──
+    const linkPath = d => {
+        const sx = d.source.y + NW(d.source) / 2, sy = d.source.x;
+        const ex = d.target.y - NW(d.target) / 2, ey = d.target.x;
+        const mx = (sx + ex) / 2;
+        return `M${sx},${sy} C${mx},${sy} ${mx},${ey} ${ex},${ey}`;
+    };
+
     // ── Links (S-curve from right edge → left edge) ──
     // Current nav path IDs (root → current topic, all ancestors lit up)
     const pathIds = new Set(navPath.map(p => p.id));
@@ -2307,26 +2364,49 @@ async function renderTree() {
             if (onPath(d.target)) return 1.5;
             return 1;
         })
-        .attr('d', d => {
-            const sx = d.source.y + NW(d.source) / 2, sy = d.source.x;
-            const ex = d.target.y - NW(d.target) / 2, ey = d.target.x;
-            const mx = (sx + ex) / 2;
-            return `M${sx},${sy} C${mx},${sy} ${mx},${ey} ${ex},${ey}`;
-        });
+        .attr('d', linkPath);
 
     // ── Nodes ──
     const node = g.selectAll('.tree-node')
         .data(root.descendants())
         .join('g').attr('class','tree-node')
         .attr('transform', d => `translate(${d.y},${d.x})`)
-        .style('cursor', 'pointer')
-        .on('click', (e, d) => {
+        .style('cursor', 'grab')
+        .on('click', function(e, d) {
+            if (d._justDragged) { d._justDragged = false; return; }
             if (d.data._type === 'root' || d.data._type === 'subtopic') {
                 makeTopicMain(d.data._topicId);
                 return;
             }
             showNodeDetail({ id: d.data.id, question: d.data._question || d.data._label, answer: d.data.answer || '', _topicId: d.data._topicId });
         });
+
+    // ── Drag: long-press (180ms) to enable free-form repositioning ──
+    const drag = d3.drag()
+        .on('start', function(e, d) {
+            d._canDrag = false;
+            d._justDragged = false;
+            d._holdTimer = setTimeout(() => {
+                d._canDrag = true;
+                d3.select(this).style('cursor', 'grabbing');
+                d3.select(this).raise(); // bring to front
+            }, 180);
+        })
+        .on('drag', function(e, d) {
+            if (!d._canDrag) return;
+            d.y += e.dx;
+            d.x += e.dy;
+            d3.select(this).attr('transform', `translate(${d.y},${d.x})`);
+            g.selectAll('.tree-link').attr('d', linkPath);
+            d._justDragged = true;
+        })
+        .on('end', function(e, d) {
+            clearTimeout(d._holdTimer);
+            d._canDrag = false;
+            d3.select(this).style('cursor', 'grab');
+        });
+
+    node.call(drag);
 
     // Glow halo for current topic + root
     node.filter(d => isCurrent(d) || d.data._type === 'root')

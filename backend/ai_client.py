@@ -164,25 +164,46 @@ def stream_chat_with_rag(
             yield chunk.choices[0].delta.content
 
 
-def generate_title(text: str) -> str:
-    """Generate a concise title (≤10 Chinese chars) for the given text."""
+def generate_title(text: str, image_data_url: str | None = None) -> str:
+    """Generate a concise title (≤10 Chinese chars) for the given text or image."""
     try:
         client = get_ai_client()
+        system_msg = {
+            "role": "system",
+            "content": (
+                "为以下内容生成一个简洁标题，要求：\n"
+                "- 最多10个汉字（英文单词算一个词）\n"
+                "- 只输出标题本身，不加引号、标点或任何解释\n"
+                "- 抓住核心概念，言简意赅"
+            )
+        }
+        if image_data_url:
+            # Use vision to summarize the image content
+            user_msg = {
+                "role": "user",
+                "content": [
+                    {"type": "image_url", "image_url": {"url": image_data_url, "detail": "low"}},
+                    {"type": "text", "text": "请用最多10个汉字总结图片的核心内容或语义，只输出标题。"},
+                ],
+            }
+        else:
+            # For file uploads, extract only the file content portion if present
+            content = text
+            if "[请根据以下文件内容回答我的问题]" in text:
+                try:
+                    # Extract filename + first part of file content
+                    parts = text.split("---\n我的问题:")
+                    content = parts[0].replace("[请根据以下文件内容回答我的问题]", "").strip()
+                except Exception:
+                    pass
+            user_msg = {"role": "user", "content": content[:400]}
+
         response = client.chat.completions.create(
             model=get_model(),
-            messages=[
-                {"role": "system", "content": (
-                    "为以下内容生成一个简洁标题，要求：\n"
-                    "- 最多10个汉字（英文单词算一个词）\n"
-                    "- 只输出标题本身，不加引号、标点或任何解释\n"
-                    "- 抓住核心概念，言简意赅"
-                )},
-                {"role": "user", "content": text[:300]},
-            ],
+            messages=[system_msg, user_msg],
             max_completion_tokens=25,
             temperature=0.3,
         )
         return response.choices[0].message.content.strip()[:20]
     except Exception:
-        # Fallback: first meaningful chunk of text
         return text[:15].strip()

@@ -13,7 +13,7 @@ import os
 import json
 import tempfile
 
-app = FastAPI(title="智能学习系统")
+app = FastAPI(title="Studorge")
 
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend")
 app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
@@ -125,7 +125,8 @@ def ask_question_stream(body: AskQuestion):
             return
 
         # Generate concise title for tree display
-        title = generate_title(body.question)
+        # For image inputs, use vision to summarize the image content
+        title = generate_title(body.question, image_data_url=body.image_data_url)
 
         # Persist to database after streaming completes
         conn = get_db()
