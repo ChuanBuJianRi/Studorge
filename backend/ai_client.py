@@ -61,7 +61,7 @@ def _build_messages(
     question: str,
     context: str = "",
     system_prompt: str = "",
-    image_data_url: str | None = None,
+    image_data_urls: list[str] | None = None,
 ) -> list:
     messages = [{"role": "system", "content": system_prompt or DEFAULT_SYSTEM_PROMPT}]
     if context:
@@ -69,14 +69,14 @@ def _build_messages(
             "role": "system",
             "content": f"以下是用户之前学习过的相关内容：\n{context}",
         })
-    if image_data_url:
-        messages.append({
-            "role": "user",
-            "content": [
-                {"type": "image_url", "image_url": {"url": image_data_url, "detail": "high"}},
-                {"type": "text", "text": question},
-            ],
-        })
+    urls = [u for u in (image_data_urls or []) if u]
+    if urls:
+        content: list = [
+            {"type": "image_url", "image_url": {"url": u, "detail": "high"}}
+            for u in urls
+        ]
+        content.append({"type": "text", "text": question})
+        messages.append({"role": "user", "content": content})
     else:
         messages.append({"role": "user", "content": question})
     return messages
@@ -98,13 +98,13 @@ def chat_with_ai(
     question: str,
     context: str = "",
     system_prompt: str = "",
-    image_data_url: str | None = None,
+    image_data_urls: list[str] | None = None,
     response_length: str = "extend",
 ) -> str:
     """Send a question to the AI and get a response."""
     client = get_ai_client()
     base = system_prompt or DEFAULT_SYSTEM_PROMPT
-    messages = _build_messages(question, context, build_system_prompt(base, response_length), image_data_url)
+    messages = _build_messages(question, context, build_system_prompt(base, response_length), image_data_urls)
     response = client.chat.completions.create(
         model=get_model(),
         messages=messages,
@@ -117,7 +117,7 @@ def chat_with_ai(
 def chat_with_rag(
     question: str,
     rag_results: list[dict],
-    image_data_url: str | None = None,
+    image_data_urls: list[str] | None = None,
     response_length: str = "extend",
 ) -> str:
     """Chat with AI using RAG context."""
@@ -128,7 +128,7 @@ def chat_with_rag(
         question,
         context=context,
         system_prompt=base,
-        image_data_url=image_data_url,
+        image_data_urls=image_data_urls,
         response_length=response_length,
     )
 
@@ -136,7 +136,7 @@ def chat_with_rag(
 def stream_chat_with_rag(
     question: str,
     rag_results: list[dict],
-    image_data_url: str | None = None,
+    image_data_urls: list[str] | None = None,
     response_length: str = "extend",
     parent_context: str = "",
 ):
@@ -163,7 +163,7 @@ def stream_chat_with_rag(
         question,
         context,
         build_system_prompt(base, response_length),
-        image_data_url,
+        image_data_urls,
     )
 
     stream = client.chat.completions.create(
@@ -178,26 +178,41 @@ def stream_chat_with_rag(
             yield chunk.choices[0].delta.content
 
 
-def generate_title(text: str, image_data_url: str | None = None) -> str:
+def generate_title(text: str, image_data_url: str | None = None, image_data_urls: list[str] | None = None) -> str:
     """Generate a concise title (≤10 Chinese chars) for the given text or image."""
     try:
         client = get_ai_client()
         system_msg = {
             "role": "system",
             "content": (
-                "为以下内容生成一个简洁标题，要求：\n"
-                "- 最多10个汉字（英文单词算一个词）\n"
+                "你是标题生成专家。生成简洁标题，要求：\n"
+                "- 最多10个汉字（英文术语保留原文）\n"
                 "- 只输出标题本身，不加引号、标点或任何解释\n"
-                "- 抓住核心概念，言简意赅"
+                "- 抓住具体核心概念，言简意赅\n"
+                "- 禁止使用'图片内容描述'、'内容描述'、'图片'、'图像'等泛化词"
             )
         }
-        if image_data_url:
-            # Use vision to summarize the image content
+        # Prefer list; fall back to single URL
+        urls = [u for u in (image_data_urls or []) if u]
+        if not urls and image_data_url:
+            urls = [image_data_url]
+        if urls:
+            # Use vision to summarize the image content with specific analysis
             user_msg = {
                 "role": "user",
                 "content": [
-                    {"type": "image_url", "image_url": {"url": image_data_url, "detail": "low"}},
-                    {"type": "text", "text": "请用最多10个汉字总结图片的核心内容或语义，只输出标题。"},
+                    {"type": "image_url", "image_url": {"url": urls[0], "detail": "high"}},
+                    {
+                        "type": "text",
+                        "text": (
+                            "仔细分析图片中的具体内容（文字、公式、图表、知识点等），"
+                            "用最多10个汉字提炼图中展示的核心主题或知识点，只输出标题本身。\n"
+                            "要求：\n"
+                            "- 直接说明图中具体的知识或主题（如'余弦相似度原理'、'神经网络结构'）\n"
+                            "- 禁止使用'图片'、'内容描述'、'图像'、'截图'等泛化词\n"
+                            "- 不加引号、标点或任何解释"
+                        ),
+                    },
                 ],
             }
         else:

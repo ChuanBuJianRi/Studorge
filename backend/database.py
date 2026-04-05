@@ -1,8 +1,25 @@
 """SQLite database for topics and learning nodes."""
 import sqlite3
 import os
+import platform as _platform
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "learning.db")
+
+def _default_data_dir() -> str:
+    """Return the OS-appropriate user data directory for Studorge."""
+    system = _platform.system()
+    if system == "Windows":
+        base = os.environ.get("APPDATA") or os.path.expanduser("~")
+        return os.path.join(base, "Studorge", "data")
+    elif system == "Darwin":
+        return os.path.join(os.path.expanduser("~"), "Library", "Application Support", "Studorge", "data")
+    else:
+        xdg = os.environ.get("XDG_DATA_HOME") or os.path.join(os.path.expanduser("~"), ".local", "share")
+        return os.path.join(xdg, "Studorge", "data")
+
+
+# STUDORGE_DATA_DIR env-var overrides the default (used by macOS .app launcher).
+_DATA_DIR = os.environ.get("STUDORGE_DATA_DIR") or _default_data_dir()
+DB_PATH = os.path.join(_DATA_DIR, "learning.db")
 
 
 def get_db():
@@ -16,6 +33,11 @@ def get_db():
 def init_db():
     conn = get_db()
     conn.executescript("""
+        CREATE TABLE IF NOT EXISTS folders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
         CREATE TABLE IF NOT EXISTS topics (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
@@ -44,6 +66,7 @@ def init_db():
         "ALTER TABLE topics ADD COLUMN parent_id INTEGER",
         "ALTER TABLE nodes ADD COLUMN title TEXT",
         "ALTER TABLE topics ADD COLUMN source_node_id INTEGER",
+        "ALTER TABLE topics ADD COLUMN folder_id INTEGER REFERENCES folders(id) ON DELETE SET NULL",
     ]:
         try:
             conn.execute(migration)

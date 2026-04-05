@@ -9,3 +9,8 @@ venv/
 *.egg-info/
 .DS_Store
 .claude/
+dist/
+build/
+data/
+chroma_db/
+*.db

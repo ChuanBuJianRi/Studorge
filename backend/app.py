@@ -29,6 +29,64 @@ def index():
     return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
 
 
+# ──────────────────────────── Folder APIs ───────────────────────────
+
+class FolderCreate(BaseModel):
+    name: str
+
+
+@app.post("/api/folders")
+def create_folder(body: FolderCreate):
+    conn = get_db()
+    cursor = conn.execute(
+        "INSERT INTO folders (name) VALUES (?)", (body.name,)
+    )
+    conn.commit()
+    folder = dict_from_row(
+        conn.execute("SELECT * FROM folders WHERE id = ?", (cursor.lastrowid,)).fetchone()
+    )
+    conn.close()
+    return folder
+
+
+@app.get("/api/folders")
+def list_folders():
+    conn = get_db()
+    folders = dict_from_rows(
+        conn.execute("SELECT * FROM folders ORDER BY created_at ASC").fetchall()
+    )
+    conn.close()
+    return folders
+
+
+@app.delete("/api/folders/{folder_id}")
+def delete_folder(folder_id: int):
+    conn = get_db()
+    conn.execute("UPDATE topics SET folder_id = NULL WHERE folder_id = ?", (folder_id,))
+    conn.execute("DELETE FROM folders WHERE id = ?", (folder_id,))
+    conn.commit()
+    conn.close()
+    return {"ok": True}
+
+
+class FolderRename(BaseModel):
+    name: str
+
+
+@app.patch("/api/folders/{folder_id}")
+def rename_folder(folder_id: int, body: FolderRename):
+    conn = get_db()
+    conn.execute("UPDATE folders SET name = ? WHERE id = ?", (body.name, folder_id))
+    conn.commit()
+    folder = dict_from_row(
+        conn.execute("SELECT * FROM folders WHERE id = ?", (folder_id,)).fetchone()
+    )
+    conn.close()
+    if not folder:
+        raise HTTPException(status_code=404, detail="Folder not found")
+    return folder
+
+
 # ──────────────────────────── Topic APIs ────────────────────────────
 
 class TopicCreate(BaseModel):
@@ -71,6 +129,24 @@ def delete_topic(topic_id: int):
     return {"ok": True}
 
 
+class TopicMoveToFolder(BaseModel):
+    folder_id: int | None = None
+
+
+@app.patch("/api/topics/{topic_id}/folder")
+def move_topic_to_folder(topic_id: int, body: TopicMoveToFolder):
+    conn = get_db()
+    conn.execute("UPDATE topics SET folder_id = ? WHERE id = ?", (body.folder_id, topic_id))
+    conn.commit()
+    topic = dict_from_row(
+        conn.execute("SELECT * FROM topics WHERE id = ?", (topic_id,)).fetchone()
+    )
+    conn.close()
+    if not topic:
+        raise HTTPException(status_code=404, detail="Topic not found")
+    return topic
+
+
 # ──────────────────────────── Node APIs ─────────────────────────────
 
 class GenerateTitleRequest(BaseModel):
@@ -87,15 +163,27 @@ class AskQuestion(BaseModel):
     parent_id: int | None = None
     question: str
     node_type: str = "question"
-    image_data_url: str | None = None  # base64 data URL for vision input
-    response_length: str = "extend"    # normal | extend | extend_longer
+    image_data_url: str | None = None        # single image (legacy / compat)
+    image_data_urls: list[str] = []          # multiple images (new)
+    response_length: str = "extend"          # normal | extend | extend_longer
+
+    @property
+    def all_image_urls(self) -> list[str]:
+        """Merge single + list fields, deduplicate, filter empties."""
+        seen: set[str] = set()
+        result = []
+        for u in ([self.image_data_url] if self.image_data_url else []) + self.image_data_urls:
+            if u and u not in seen:
+                seen.add(u)
+                result.append(u)
+        return result
 
 
 @app.post("/api/ask")
 def ask_question(body: AskQuestion):
     """Ask AI a question and save the Q&A as a learning node (non-streaming)."""
     rag_results = search_rag(body.question, topic_id=body.topic_id)
-    answer = chat_with_rag(body.question, rag_results, body.image_data_url, body.response_length)
+    answer = chat_with_rag(body.question, rag_results, body.all_image_urls or None, body.response_length)
     conn = get_db()
     cursor = conn.execute(
         "INSERT INTO nodes (topic_id, parent_id, question, answer, node_type) VALUES (?, ?, ?, ?, ?)",
@@ -133,7 +221,7 @@ def ask_question_stream(body: AskQuestion):
         full_answer = ""
         try:
             for token in stream_chat_with_rag(
-                body.question, rag_results, body.image_data_url,
+                body.question, rag_results, body.all_image_urls or None,
                 body.response_length, parent_context=parent_context,
             ):
                 full_answer += token
@@ -143,8 +231,9 @@ def ask_question_stream(body: AskQuestion):
             return
 
         # Generate concise title for tree display
-        # For image inputs, use vision to summarize the image content
-        title = generate_title(body.question, image_data_url=body.image_data_url)
+        # For image inputs, use vision to summarize the first image's content
+        imgs = body.all_image_urls
+        title = generate_title(body.question, image_data_urls=imgs if imgs else None)
 
         # Persist to database after streaming completes
         conn = get_db()
@@ -219,6 +308,20 @@ def get_node(node_id: int):
     if not node:
         raise HTTPException(status_code=404, detail="Node not found")
     return node
+
+
+@app.delete("/api/nodes/{node_id}")
+def delete_node(node_id: int):
+    conn = get_db()
+    node = conn.execute("SELECT id FROM nodes WHERE id = ?", (node_id,)).fetchone()
+    if not node:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Node not found")
+    # Child nodes are deleted automatically via ON DELETE CASCADE
+    conn.execute("DELETE FROM nodes WHERE id = ?", (node_id,))
+    conn.commit()
+    conn.close()
+    return {"ok": True}
 
 
 # ──────────────────────────── RAG Search ────────────────────────────

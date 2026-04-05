@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Studorge</title>
-    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/app-icon.png">
     <link rel="icon" type="image/png" href="/static/app-icon.png">
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+    <link rel="apple-touch-icon" href="/static/app-icon.png">
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
@@ -90,7 +90,6 @@
             border-radius: 50%;
             overflow: hidden;
             flex-shrink: 0;
-            box-shadow: 0 0 0 1px rgba(255,255,255,0.07);
         }
         .logo-icon svg,
         .logo-icon img { width: 100%; height: 100%; display: block; object-fit: cover; }
@@ -121,7 +120,8 @@
             background: linear-gradient(90deg, rgba(180,95,105,0.55), rgba(80,115,145,0.5), rgba(145,125,75,0.5));
             opacity: 0.55;
         }
-        .new-topic-row { display: flex; gap: 7px; }
+        .new-topic-row { display: flex; gap: 7px; overflow: hidden; }
+        .new-topic-row .input-base { min-width: 0; }
 
         .input-base {
             padding: 8px 12px;
@@ -253,6 +253,66 @@
         .topic-item.sub-topic:hover { color: var(--text-secondary); }
         .topic-item.sub-topic.sub-active { color: var(--accent); background: var(--bg-active); }
 
+        /* ── Folders ── */
+        .folder-item {
+            border-radius: 7px;
+            margin-bottom: 2px;
+            transition: background 0.15s;
+        }
+        .folder-header {
+            padding: 7px 10px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            cursor: pointer;
+            border-radius: 7px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            transition: all 0.15s;
+            user-select: none;
+            position: relative;
+        }
+        .folder-header:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .folder-header.drag-over {
+            background: rgba(45,212,191,0.1);
+            outline: 1px dashed var(--accent);
+            color: var(--accent);
+        }
+        .folder-icon { font-size: 13px; flex-shrink: 0; }
+        .folder-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+        .folder-chevron {
+            font-size: 9px; color: var(--text-tertiary);
+            transition: transform 0.2s; flex-shrink: 0;
+        }
+        .folder-chevron.open { transform: rotate(90deg); }
+        .folder-actions { display: none; gap: 2px; }
+        .folder-header:hover .folder-actions { display: flex; }
+        .folder-action-btn {
+            background: none; border: none; cursor: pointer;
+            color: var(--text-tertiary); font-size: 12px; padding: 2px 4px;
+            border-radius: 4px; line-height: 1; transition: all 0.15s;
+        }
+        .folder-action-btn:hover { color: var(--red); background: rgba(248,113,113,0.1); }
+        .folder-children {
+            overflow: hidden;
+        }
+        .folder-item .topic-item {
+            padding-left: 26px !important;
+        }
+        /* Drag-and-drop on topic items */
+        .topic-item[draggable="true"] { cursor: grab; }
+        .topic-item[draggable="true"]:active { cursor: grabbing; }
+        .topic-item.dragging { opacity: 0.4; }
+        /* Ungrouped drop zone */
+        .ungrouped-drop {
+            border-radius: 7px;
+            transition: background 0.15s;
+        }
+        .ungrouped-drop.drag-over {
+            background: rgba(45,212,191,0.06);
+            outline: 1px dashed var(--accent);
+        }
+
         /* RAG section */
         .rag-section {
             padding: 12px 14px;
@@ -267,6 +327,106 @@
         .rag-input-row { display: flex; gap: 5px; }
         .rag-input-row .input-base { flex: 1; padding: 6px 10px; }
 
+        /* ── Sidebar profile ── */
+        .sidebar-profile {
+            padding: 10px 12px;
+            border-top: 1px solid var(--border);
+            flex-shrink: 0;
+            display: flex; align-items: center; gap: 10px;
+            cursor: pointer;
+            border-radius: 0 0 0 0;
+            transition: background 0.15s;
+            position: relative;
+        }
+        .sidebar-profile:hover { background: var(--bg-hover); }
+        .profile-avatar {
+            width: 34px; height: 34px; border-radius: 50%;
+            background: var(--bg-card);
+            border: 1.5px solid var(--border-light);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 700; color: var(--accent);
+            overflow: hidden; flex-shrink: 0;
+            transition: border-color 0.15s;
+        }
+        .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .sidebar-profile:hover .profile-avatar { border-color: var(--accent-dim); }
+        .profile-info { flex: 1; min-width: 0; }
+        .profile-name {
+            font-size: 12.5px; font-weight: 600; color: var(--text-primary);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .profile-sub {
+            font-size: 10.5px; color: var(--text-tertiary); margin-top: 1px;
+        }
+        .profile-edit-icon {
+            color: var(--text-tertiary); opacity: 0; transition: opacity 0.15s;
+            flex-shrink: 0;
+        }
+        .sidebar-profile:hover .profile-edit-icon { opacity: 1; }
+
+        /* Profile edit popup */
+        .profile-popup {
+            position: absolute; bottom: calc(100% + 6px); left: 10px; right: 10px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius);
+            padding: 14px;
+            box-shadow: var(--shadow-lg);
+            z-index: 200;
+            display: none;
+        }
+        .profile-popup.open { display: block; }
+        .profile-popup-title {
+            font-size: 11px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 1px; color: var(--text-tertiary); margin-bottom: 10px;
+        }
+        .profile-avatar-upload {
+            display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+        }
+        .profile-avatar-large {
+            width: 52px; height: 52px; border-radius: 50%;
+            background: var(--bg-hover);
+            border: 2px solid var(--border-light);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; font-weight: 700; color: var(--accent);
+            overflow: hidden; flex-shrink: 0; cursor: pointer;
+            transition: border-color 0.15s;
+            position: relative;
+        }
+        .profile-avatar-large:hover { border-color: var(--accent-dim); }
+        .profile-avatar-large img { width: 100%; height: 100%; object-fit: cover; }
+        .avatar-upload-hint { font-size: 11px; color: var(--text-tertiary); line-height: 1.5; }
+        .avatar-upload-hint span { color: var(--accent); cursor: pointer; }
+        .avatar-upload-hint span:hover { text-decoration: underline; }
+
+        .profile-popup-divider {
+            height: 1px;
+            background: var(--border-light);
+            margin: 12px 0 8px;
+        }
+        .profile-popup-settings {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            background: var(--bg-hover);
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 500;
+            font-family: inherit;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }
+        .profile-popup-settings:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--accent-dim);
+            color: var(--text-primary);
+        }
+        .profile-popup-settings svg { flex-shrink: 0; opacity: 0.85; }
+
         /* ═══════════════════ MAIN ═══════════════════ */
         .main {
             flex: 1;
@@ -278,18 +438,6 @@
             background: var(--bg-primary);
             position: relative;
         }
-
-        .btn-settings {
-            position: absolute; top: 10px; right: 14px; z-index: 20;
-            padding: 6px 12px;
-            background: var(--bg-tertiary);
-            color: var(--text-tertiary);
-            border: 1px solid var(--border-light);
-            border-radius: 7px;
-            font-size: 11px; font-weight: 500; font-family: inherit;
-            cursor: pointer; transition: all 0.2s;
-        }
-        .btn-settings:hover { background: var(--bg-hover); color: var(--text-secondary); border-color: var(--accent-dim); }
 
         .tab-bar {
             display: flex;
@@ -535,26 +683,40 @@
         .btn-voice.recording {
             color: var(--red);
             border-color: rgba(248,113,113,0.3);
-            background: rgba(248,113,113,0.06);
+            background: rgba(248,113,113,0.1);
         }
-        .btn-voice.recording::after {
-            content: '';
-            position: absolute; inset: -4px;
-            border-radius: 12px;
-            border: 2px solid var(--red);
-            animation: recordRing 1s ease-out infinite;
-            opacity: 0;
-        }
-        @keyframes recordRing { 0% { transform: scale(1); opacity: 0.7; } 100% { transform: scale(1.5); opacity: 0; } }
 
+        /* Ripple wrapper for voice buttons */
+        .voice-ripple-wrap { position: relative; display: inline-flex; }
+        .voice-ripple-wrap .ripple-ring {
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            border: 2px solid rgba(248,113,113,0.7);
+            opacity: 0;
+            pointer-events: none;
+        }
+        .voice-ripple-wrap .ripple-ring:nth-child(1) { animation: rippleOut 1.6s ease-out infinite 0s; }
+        .voice-ripple-wrap .ripple-ring:nth-child(2) { animation: rippleOut 1.6s ease-out infinite 0.53s; }
+        .voice-ripple-wrap .ripple-ring:nth-child(3) { animation: rippleOut 1.6s ease-out infinite 1.06s; }
+        @keyframes rippleOut {
+            0%   { transform: scale(1);   opacity: 0.7; }
+            100% { transform: scale(2.4); opacity: 0; }
+        }
+
+        /* Multi-attachment row */
+        .attachments-row {
+            display: flex; flex-wrap: wrap; gap: 6px;
+            align-items: center;
+        }
         .file-badge {
             display: flex; align-items: center; gap: 5px;
-            padding: 4px 10px;
+            padding: 4px 9px;
             background: var(--bg-hover);
             border: 1px solid var(--border-light);
             border-radius: 20px;
             font-size: 11px; color: var(--text-secondary);
-            max-width: 160px;
+            max-width: 150px; flex-shrink: 0;
         }
         .file-badge-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .file-remove {
@@ -570,17 +732,17 @@
             background: var(--bg-hover);
             border: 1px solid var(--border-light);
             border-radius: 10px;
-            padding: 3px 8px 3px 3px;
+            padding: 3px 8px 3px 4px;
             flex-shrink: 0;
         }
         .img-preview-badge img {
-            width: 34px; height: 34px;
-            object-fit: cover; border-radius: 7px;
+            width: 32px; height: 32px;
+            object-fit: cover; border-radius: 6px;
             display: block;
         }
         .img-preview-badge span {
             font-size: 11px; color: var(--text-secondary);
-            max-width: 90px; overflow: hidden;
+            max-width: 80px; overflow: hidden;
             text-overflow: ellipsis; white-space: nowrap;
         }
 
@@ -885,6 +1047,79 @@
         .empty-state h2 { font-size: 16px; font-weight: 600; }
         .empty-state p { font-size: 13px; color: var(--text-tertiary); text-align: center; max-width: 280px; line-height: 1.6; }
 
+        /* Greeting empty state */
+        .greeting-state {
+            display: flex; align-items: center; justify-content: center;
+            height: 100%; flex-direction: column; gap: 8px; padding: 40px;
+            user-select: none;
+        }
+        .greeting-row {
+            display: flex; align-items: center; gap: 14px;
+        }
+        .greeting-icon {
+            font-size: 42px; line-height: 1; flex-shrink: 0;
+            border-radius: 50%; overflow: hidden; display: block;
+        }
+        .greeting-text-col { display: flex; flex-direction: column; gap: 4px; }
+        .greeting-salutation {
+            font-size: 26px; font-weight: 700; color: var(--text-primary);
+            line-height: 1.2; letter-spacing: -0.5px;
+        }
+        .greeting-username {
+            color: var(--text-primary);
+        }
+        .greeting-sub {
+            font-size: 13px; color: var(--text-tertiary); line-height: 1.6;
+        }
+        .greeting-hint {
+            margin-top: 6px; font-size: 11.5px; color: var(--text-tertiary);
+            opacity: 0.6;
+        }
+
+        /* Home input box */
+        .home-input-wrap {
+            width: 100%; max-width: 680px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-xl);
+            padding: 16px 18px 12px;
+            display: flex; flex-direction: column; gap: 10px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            margin-top: 32px;
+        }
+        .home-input-wrap:focus-within {
+            border-color: rgba(45,212,191,0.4);
+            box-shadow: 0 0 0 3px rgba(45,212,191,0.07);
+        }
+        .home-input-wrap textarea {
+            width: 100%; background: transparent; border: none; outline: none;
+            color: var(--text-primary); font-size: 14.5px; font-family: inherit;
+            resize: none; line-height: 1.65; min-height: 28px; max-height: 200px;
+            overflow-y: auto;
+        }
+        .home-input-wrap textarea::placeholder { color: var(--text-tertiary); }
+        .home-input-toolbar {
+            display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+        }
+        .home-input-hint {
+            flex: 1; font-size: 11px; color: var(--text-tertiary);
+        }
+        .home-send-btn {
+            background: var(--accent); border: none; border-radius: 8px;
+            width: 32px; height: 32px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: background 0.15s, opacity 0.15s;
+            flex-shrink: 0; color: #000;
+        }
+        .home-send-btn:hover { background: var(--accent-light); }
+        .home-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .home-send-btn svg { width: 15px; height: 15px; }
+        .home-attachments-row {
+            display: flex; flex-wrap: wrap; gap: 6px;
+            padding-bottom: 2px;
+        }
+        .home-attachments-row:empty { display: none; }
+
         /* Loading dots (legacy for RAG) */
         .loading-dots { display: inline-flex; gap: 3px; align-items: center; }
         .loading-dots span { width: 5px; height: 5px; background: var(--accent); border-radius: 50%; animation: ldBounce 1.1s infinite; }
@@ -974,6 +1209,9 @@
             <input type="text" class="input-base" id="newTopicInput" placeholder="新专题名称...">
             <button class="btn btn-primary" onclick="createTopic()">创建</button>
         </div>
+        <div style="display:flex;gap:5px;margin-top:6px;">
+            <button class="btn btn-ghost btn-small" style="flex:1;font-size:11px;" onclick="createFolder()">📁 新建文件夹</button>
+        </div>
     </div>
     <div class="topic-list" id="topicList">
         <div class="topic-list-label">我的专题</div>
@@ -983,6 +1221,46 @@
         <div class="rag-input-row">
             <input type="text" class="input-base" id="ragInput" placeholder="搜索学过的内容..." onkeydown="if(event.key==='Enter')searchRag()">
             <button class="btn btn-ghost btn-small" onclick="searchRag()">搜索</button>
+        </div>
+    </div>
+
+    <!-- User profile bar -->
+    <div class="sidebar-profile" id="sidebarProfile" onclick="toggleProfilePopup()">
+        <!-- Profile edit popup (above) -->
+        <div class="profile-popup" id="profilePopup">
+            <div class="profile-popup-title">个人资料</div>
+            <div class="profile-avatar-upload">
+                <div class="profile-avatar-large" id="profileAvatarLarge" onclick="event.stopPropagation();triggerAvatarUpload()"></div>
+                <div class="avatar-upload-hint">
+                    <span onclick="event.stopPropagation();triggerAvatarUpload()">点击上传头像</span><br>
+                    支持 JPG / PNG<br>
+                    <span onclick="event.stopPropagation();clearAvatar()" style="color:var(--text-tertiary);">移除头像</span>
+                </div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;">
+                <input class="input-base" id="profileNameInput" placeholder="你的名字" style="flex:1;font-size:12px;"
+                    onkeydown="if(event.key==='Enter')saveProfile()" onclick="event.stopPropagation()">
+                <button class="btn btn-primary btn-small" onclick="event.stopPropagation();saveProfile()">保存</button>
+            </div>
+            <div class="profile-popup-divider"></div>
+            <button type="button" class="profile-popup-settings" onclick="event.stopPropagation(); document.getElementById('profilePopup').classList.remove('open'); openSettings();" title="API 与模型">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+                </svg>
+                设置
+            </button>
+            <input type="file" id="avatarFileInput" accept="image/*" style="display:none" onchange="handleAvatarUpload(this)">
+        </div>
+
+        <div class="profile-avatar" id="profileAvatarSmall"></div>
+        <div class="profile-info">
+            <div class="profile-name" id="profileNameDisplay">同学</div>
+            <div class="profile-sub">点击编辑资料</div>
+        </div>
+        <div class="profile-edit-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+            </svg>
         </div>
     </div>
 </div>
@@ -1001,7 +1279,6 @@
         </div>
     </div>
 
-    <button class="btn-settings" onclick="openSettings()">API 设置</button>
     <!-- Breadcrumb navigation (shown when depth > 0) -->
     <div class="breadcrumb-bar" id="breadcrumbBar"></div>
     <div class="tab-bar" id="tabBar" style="display:none;">
@@ -1012,36 +1289,25 @@
         <div class="panel active" id="panelChat">
             <div class="chat-panel">
                 <div class="chat-messages" id="chatMessages">
-                    <div class="empty-state">
-                        <h2>开始你的学习旅程</h2>
-                        <p>在左侧创建一个专题，然后开始提问。AI 将帮助你深入理解每个知识点。</p>
-                    </div>
+                    <div class="greeting-state" id="greetingState"></div>
                 </div>
                 <div class="chat-input-area" id="chatInputArea" style="display:none;">
                     <div class="input-wrap">
                         <textarea id="questionInput" placeholder="输入你想学习的问题..." rows="1"></textarea>
                     </div>
                     <div class="input-toolbar">
-                        <label class="btn-icon" id="attachBtn" title="上传文件">
+                        <label class="btn-icon" id="attachBtn" title="上传文件（支持多选）">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
-                            <input type="file" id="fileInput" style="display:none" accept=".txt,.md,.pdf" onchange="handleFileSelect(this)">
+                            <input type="file" id="fileInput" style="display:none" accept=".txt,.md,.pdf" multiple onchange="handleFileSelect(this)">
                         </label>
-                        <label class="btn-icon" id="imgUploadBtn" title="上传图片">
+                        <label class="btn-icon" id="imgUploadBtn" title="上传图片（支持多选）">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                            <input type="file" id="imageInput" style="display:none" accept="image/*" onchange="handleImageSelect(this)">
+                            <input type="file" id="imageInput" style="display:none" accept="image/*" multiple onchange="handleImageSelect(this)">
                         </label>
                         <button class="btn-icon btn-voice" id="voiceBtn" title="语音输入" onclick="toggleVoice()">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
                         </button>
-                        <div class="file-badge" id="fileBadge" style="display:none;">
-                            <span class="file-badge-name" id="fileNameLabel"></span>
-                            <button class="file-remove" onclick="removeFile()">×</button>
-                        </div>
-                        <div class="img-preview-badge" id="imgPreviewBadge" style="display:none;">
-                            <img id="imgPreviewThumb" src="" alt="预览">
-                            <span id="imgPreviewName"></span>
-                            <button class="file-remove" onclick="removeImage()">×</button>
-                        </div>
+                        <div class="attachments-row" id="attachmentsRow"></div>
                         <div class="input-spacer"></div>
                         <div class="resp-len-ctrl" id="respLenCtrl">
                             <button class="resp-len-btn active" data-val="normal"  onclick="setRespLen('normal')">Normal</button>
@@ -1112,7 +1378,8 @@
     </div>
     <div class="answer-content" id="nodeDetailAnswer"></div>
     <div class="modal-actions">
-        <button class="btn btn-danger btn-small" onclick="closeModals()">关闭</button>
+        <button class="btn btn-danger btn-small" onclick="deleteCurrentNode()">删除节点</button>
+        <button class="btn btn-ghost btn-small" onclick="closeModals()">关闭</button>
     </div>
 </div>
 
@@ -1126,7 +1393,7 @@
 </div>
 
 <div class="modal" id="settingsModal">
-    <h3>API 设置</h3>
+    <h3>设置</h3>
     <div class="settings-form">
         <div class="settings-field">
             <label>API 提供商</label>
@@ -1179,7 +1446,10 @@ let subTopicId = null;
 let subTopicName = '';
 
 let allTopics = [];
+let allFolders = [];
 let expandedTopics = new Set();
+let expandedFolders = new Set();
+let draggedTopicId = null;
 
 let selectedNodeId = null;
 let selectedText = '';
@@ -1187,10 +1457,8 @@ let selectedText = '';
 // Response length setting: 'normal' | 'extend' | 'extend_longer'
 let responseLength = localStorage.getItem('responseLength') || 'normal';
 
-let attachedFileText = null;
-let attachedFileName = null;
-let attachedImageUrl  = null;
-let attachedImageName = null;
+let attachedImages = []; // [{url, name}]
+let attachedFiles  = []; // [{text, name}]
 let mediaRecorder = null;
 let audioChunks = [];
 let isRecording = false;
@@ -1252,15 +1520,19 @@ function thinkingHTML() {
     </div>`;
 }
 
-// ═══════════════════════ TOPICS ═══════════════════════
+// ═══════════════════════ TOPICS & FOLDERS ═══════════════════════
 async function loadTopics() {
-    allTopics = await api('/api/topics');
+    [allTopics, allFolders] = await Promise.all([
+        api('/api/topics'),
+        api('/api/folders'),
+    ]);
     renderTopicTree();
 }
 
 function renderTopicTree() {
     const list = document.getElementById('topicList');
-    const rootTopics = allTopics.filter(t => !t.parent_id);
+
+    // Build child map for sub-topics (parent_id refers to topic hierarchy)
     const childMap = {};
     allTopics.forEach(t => {
         if (t.parent_id) {
@@ -1269,26 +1541,44 @@ function renderTopicTree() {
         }
     });
 
-    if (rootTopics.length === 0) {
+    // Root-level topics (no parent_id = not a sub-topic)
+    const rootTopics = allTopics.filter(t => !t.parent_id);
+    const folderTopics = {}; // folder_id -> [topics]
+    const ungrouped = [];
+    rootTopics.forEach(t => {
+        if (t.folder_id) {
+            if (!folderTopics[t.folder_id]) folderTopics[t.folder_id] = [];
+            folderTopics[t.folder_id].push(t);
+        } else {
+            ungrouped.push(t);
+        }
+    });
+
+    const hasAnything = rootTopics.length > 0 || allFolders.length > 0;
+    if (!hasAnything) {
         list.innerHTML = `<div class="topic-list-label">我的专题</div>
             <div style="padding:12px 10px;text-align:center;color:var(--text-tertiary);font-size:11.5px;">还没有专题，创建一个吧</div>`;
         return;
     }
 
-    function renderNode(t, depth) {
+    function renderTopicNode(t, depth) {
         const isMain = t.id === currentTopicId;
         const isSub = t.id === activeChildId;
         const children = childMap[t.id] || [];
         const hasChildren = children.length > 0;
         const expanded = expandedTopics.has(t.id);
-        const indent = 10 + depth * 14;
+        const indent = depth === 0 ? 10 : 10 + depth * 14;
 
         const clickFn = depth === 0
             ? `selectTopic(${t.id}, '${t.name.replace(/'/g, "\\'")}')`
             : `makeTopicMain(${t.id})`;
 
         let html = `<div class="topic-item ${isMain ? 'active' : ''} ${depth > 0 ? 'sub-topic' : ''} ${isSub ? 'sub-active' : ''}"
-                style="padding-left:${indent}px" onclick="${clickFn}">`;
+            style="padding-left:${indent}px" onclick="${clickFn}"
+            draggable="true"
+            data-topic-id="${t.id}"
+            ondragstart="onTopicDragStart(event,${t.id})"
+            ondragend="onTopicDragEnd(event)">`;
 
         if (hasChildren) {
             html += `<button class="topic-expand-btn ${expanded ? 'expanded' : ''}"
@@ -1302,22 +1592,146 @@ function renderTopicTree() {
         </div>`;
 
         if (hasChildren && expanded) {
-            children.forEach(child => { html += renderNode(child, depth + 1); });
+            children.forEach(child => { html += renderTopicNode(child, depth + 1); });
         }
         return html;
     }
 
-    list.innerHTML = '<div class="topic-list-label">我的专题</div>' +
-        rootTopics.map(t => renderNode(t, 0)).join('');
+    function renderFolder(folder) {
+        const open = expandedFolders.has(folder.id);
+        const topics = folderTopics[folder.id] || [];
+        let html = `<div class="folder-item" id="folder-${folder.id}">
+            <div class="folder-header"
+                onclick="toggleFolderExpand(${folder.id})"
+                ondragover="onFolderDragOver(event,${folder.id})"
+                ondragleave="onFolderDragLeave(event,${folder.id})"
+                ondrop="onFolderDrop(event,${folder.id})">
+                <span class="folder-icon">${open ? '📂' : '📁'}</span>
+                <span class="folder-name">${escapeHtml(folder.name)}</span>
+                <span style="font-size:10px;color:var(--text-tertiary);flex-shrink:0;margin-right:2px;">${topics.length}</span>
+                <div class="folder-actions" onclick="event.stopPropagation()">
+                    <button class="folder-action-btn" title="重命名" onclick="renameFolder(${folder.id},'${folder.name.replace(/'/g, "\\'")}')"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                    <button class="folder-action-btn" title="删除文件夹" onclick="deleteFolder(${folder.id})">×</button>
+                </div>
+                <span class="folder-chevron ${open ? 'open' : ''}">▶</span>
+            </div>`;
+        if (open && topics.length > 0) {
+            html += `<div class="folder-children">` + topics.map(t => renderTopicNode(t, 0)).join('') + `</div>`;
+        } else if (open && topics.length === 0) {
+            html += `<div class="folder-children"><div style="padding:6px 26px;font-size:11px;color:var(--text-tertiary);">拖入专题到这里</div></div>`;
+        }
+        html += `</div>`;
+        return html;
+    }
+
+    let html = '<div class="topic-list-label">我的专题</div>';
+
+    // Render folders first
+    html += allFolders.map(f => renderFolder(f)).join('');
+
+    // Render ungrouped topics
+    if (ungrouped.length > 0) {
+        html += `<div class="ungrouped-drop" id="ungrouped-zone"
+            ondragover="onUngroupedDragOver(event)"
+            ondragleave="onUngroupedDragLeave(event)"
+            ondrop="onUngroupedDrop(event)">`;
+        if (allFolders.length > 0) {
+            html += `<div class="topic-list-label" style="margin-top:6px;">未分组</div>`;
+        }
+        html += ungrouped.map(t => renderTopicNode(t, 0)).join('') + `</div>`;
+    } else if (allFolders.length > 0) {
+        html += `<div class="ungrouped-drop" id="ungrouped-zone"
+            ondragover="onUngroupedDragOver(event)"
+            ondragleave="onUngroupedDragLeave(event)"
+            ondrop="onUngroupedDrop(event)"
+            style="min-height:32px;">
+            <div style="padding:8px 10px;font-size:11px;color:var(--text-tertiary);">将专题拖到这里取消分组</div>
+        </div>`;
+    }
+
+    list.innerHTML = html;
 }
 
 function toggleExpand(topicId) {
-    if (expandedTopics.has(topicId)) {
-        expandedTopics.delete(topicId);
-    } else {
-        expandedTopics.add(topicId);
-    }
+    if (expandedTopics.has(topicId)) expandedTopics.delete(topicId);
+    else expandedTopics.add(topicId);
     renderTopicTree();
+}
+
+function toggleFolderExpand(folderId) {
+    if (expandedFolders.has(folderId)) expandedFolders.delete(folderId);
+    else expandedFolders.add(folderId);
+    renderTopicTree();
+}
+
+// ── Drag-and-drop ──────────────────────────────────────
+function onTopicDragStart(event, topicId) {
+    draggedTopicId = topicId;
+    event.dataTransfer.effectAllowed = 'move';
+    setTimeout(() => {
+        const el = event.target.closest('.topic-item');
+        if (el) el.classList.add('dragging');
+    }, 0);
+}
+function onTopicDragEnd(event) {
+    draggedTopicId = null;
+    document.querySelectorAll('.topic-item.dragging').forEach(el => el.classList.remove('dragging'));
+}
+function onFolderDragOver(event, folderId) {
+    if (!draggedTopicId) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+    document.getElementById(`folder-${folderId}`)?.querySelector('.folder-header')?.classList.add('drag-over');
+}
+function onFolderDragLeave(event, folderId) {
+    document.getElementById(`folder-${folderId}`)?.querySelector('.folder-header')?.classList.remove('drag-over');
+}
+async function onFolderDrop(event, folderId) {
+    event.preventDefault();
+    document.getElementById(`folder-${folderId}`)?.querySelector('.folder-header')?.classList.remove('drag-over');
+    if (!draggedTopicId) return;
+    await api(`/api/topics/${draggedTopicId}/folder`, 'PATCH', { folder_id: folderId });
+    expandedFolders.add(folderId);
+    await loadTopics();
+}
+function onUngroupedDragOver(event) {
+    if (!draggedTopicId) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+    document.getElementById('ungrouped-zone')?.classList.add('drag-over');
+}
+function onUngroupedDragLeave(event) {
+    document.getElementById('ungrouped-zone')?.classList.remove('drag-over');
+}
+async function onUngroupedDrop(event) {
+    event.preventDefault();
+    document.getElementById('ungrouped-zone')?.classList.remove('drag-over');
+    if (!draggedTopicId) return;
+    await api(`/api/topics/${draggedTopicId}/folder`, 'PATCH', { folder_id: null });
+    await loadTopics();
+}
+
+// ── Folder CRUD ─────────────────────────────────────────
+async function createFolder() {
+    const name = prompt('文件夹名称：');
+    if (!name || !name.trim()) return;
+    const folder = await api('/api/folders', 'POST', { name: name.trim() });
+    expandedFolders.add(folder.id);
+    await loadTopics();
+}
+
+async function renameFolder(id, currentName) {
+    const name = prompt('重命名文件夹：', currentName);
+    if (!name || !name.trim() || name.trim() === currentName) return;
+    await api(`/api/folders/${id}`, 'PATCH', { name: name.trim() });
+    await loadTopics();
+}
+
+async function deleteFolder(id) {
+    if (!confirm('删除文件夹？文件夹内的专题将移到未分组。')) return;
+    await api(`/api/folders/${id}`, 'DELETE');
+    expandedFolders.delete(id);
+    await loadTopics();
 }
 
 async function createTopic(parentId = null, name = null) {
@@ -1354,12 +1768,192 @@ async function deleteTopic(id) {
     await loadTopics();
 }
 
-function showMainEmptyState() {
-    document.getElementById('chatMessages').innerHTML = `
-        <div class="empty-state">
-            <h2>开始你的学习旅程</h2>
-            <p>在左侧创建一个专题，然后开始提问。</p>
+// ═══════════════════ PROFILE & GREETING ═══════════════════
+function getGreeting() {
+    const h = new Date().getHours();
+    if (h >= 5  && h < 9)  return '早上好';
+    if (h >= 9  && h < 12) return '上午好';
+    if (h >= 12 && h < 14) return '中午好';
+    if (h >= 14 && h < 18) return '下午好';
+    if (h >= 18 && h < 21) return '傍晚好';
+    return '晚上好';
+}
+
+function getUsername() {
+    return localStorage.getItem('studorge_username') || '同学';
+}
+
+function getAvatar() {
+    return localStorage.getItem('studorge_avatar') || null;
+}
+
+function renderAvatarEl(el, size = 'small') {
+    if (!el) return;
+    const avatar = getAvatar();
+    const name = getUsername();
+    const initial = name.slice(-1).toUpperCase();
+    if (avatar) {
+        el.innerHTML = `<img src="${avatar}" alt="avatar">`;
+    } else {
+        el.textContent = initial;
+    }
+}
+
+function renderProfile() {
+    const name = getUsername();
+    const nameDisp = document.getElementById('profileNameDisplay');
+    if (nameDisp) nameDisp.textContent = name;
+    renderAvatarEl(document.getElementById('profileAvatarSmall'));
+    renderAvatarEl(document.getElementById('profileAvatarLarge'), 'large');
+    // Also refresh greeting if visible
+    const gs = document.getElementById('greetingState');
+    if (gs && gs.innerHTML) renderGreeting();
+}
+
+function toggleProfilePopup() {
+    const popup = document.getElementById('profilePopup');
+    const isOpen = popup.classList.contains('open');
+    if (!isOpen) {
+        document.getElementById('profileNameInput').value = getUsername() === '同学' ? '' : getUsername();
+        renderAvatarEl(document.getElementById('profileAvatarLarge'), 'large');
+    }
+    popup.classList.toggle('open');
+}
+
+function saveProfile() {
+    const input = document.getElementById('profileNameInput');
+    const name = input.value.trim();
+    localStorage.setItem('studorge_username', name || '同学');
+    document.getElementById('profilePopup').classList.remove('open');
+    renderProfile();
+}
+
+function triggerAvatarUpload() {
+    document.getElementById('avatarFileInput').click();
+}
+
+function handleAvatarUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        localStorage.setItem('studorge_avatar', e.target.result);
+        renderProfile();
+        renderAvatarEl(document.getElementById('profileAvatarLarge'), 'large');
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
+}
+
+function clearAvatar() {
+    localStorage.removeItem('studorge_avatar');
+    renderProfile();
+    renderAvatarEl(document.getElementById('profileAvatarLarge'), 'large');
+}
+
+// Close popup when clicking outside
+document.addEventListener('click', e => {
+    const popup = document.getElementById('profilePopup');
+    const profile = document.getElementById('sidebarProfile');
+    if (popup && popup.classList.contains('open') && !profile.contains(e.target)) {
+        popup.classList.remove('open');
+    }
+});
+
+function renderGreeting() {
+    const el = document.getElementById('greetingState');
+    if (!el) return;
+    const text = getGreeting();
+    const name = getUsername();
+    el.innerHTML = `
+        <div class="greeting-row">
+            <img src="/static/app-icon.png" alt="Studorge" class="greeting-icon" style="width:54px;height:54px;flex-shrink:0;">
+            <div class="greeting-text-col">
+                <div class="greeting-salutation">${text}，<span class="greeting-username">${escapeHtml(name)}</span></div>
+                <div class="greeting-sub">今天想学点什么？</div>
+            </div>
+        </div>
+        <div class="home-input-wrap" id="homeInputWrap">
+            <textarea id="homeInput" placeholder="直接输入问题，AI 将自动创建专题…" rows="1"
+                oninput="autoResizeHomeInput(this)"
+                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();homeAsk();}"></textarea>
+            <div class="home-attachments-row" id="homeAttachmentsRow"></div>
+            <div class="home-input-toolbar">
+                <label class="btn-icon" title="上传文件（PDF / TXT / MD）" style="width:30px;height:30px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+                    <input type="file" id="homeFileInput" style="display:none" accept=".txt,.md,.pdf" multiple onchange="handleHomeFileSelect(this)">
+                </label>
+                <label class="btn-icon" title="上传图片" style="width:30px;height:30px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    <input type="file" id="homeImageInput" style="display:none" accept="image/*" multiple onchange="handleHomeImageSelect(this)">
+                </label>
+                <div class="voice-ripple-wrap" id="homeVoiceWrap">
+                    <button class="btn-icon btn-voice" id="homeVoiceBtn" title="语音输入" style="width:30px;height:30px;" onclick="toggleHomeVoice()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                    </button>
+                </div>
+                <span class="home-input-hint">Enter 发送 · Shift+Enter 换行</span>
+                <button class="home-send-btn" id="homeSendBtn" onclick="homeAsk()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
+                    </svg>
+                </button>
+            </div>
         </div>`;
+    // Focus input after render
+    setTimeout(() => document.getElementById('homeInput')?.focus(), 50);
+}
+
+function autoResizeHomeInput(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+}
+
+async function homeAsk() {
+    const input = document.getElementById('homeInput');
+    if (!input) return;
+    const question = input.value.trim();
+    if (!question && attachedImages.length === 0) return;
+
+    const btn = document.getElementById('homeSendBtn');
+    if (btn) btn.disabled = true;
+    input.disabled = true;
+
+    // Use question or first image name for title generation
+    const titleSource = question || (attachedImages[0]?.name ?? '新专题');
+
+    // 1. AI 生成专题名
+    let topicName = titleSource.slice(0, 20);
+    try {
+        const r = await api('/api/generate-title', 'POST', { text: titleSource });
+        if (r.title) topicName = r.title;
+    } catch {}
+
+    // 2. 创建专题
+    let topic;
+    try {
+        topic = await api('/api/topics', 'POST', { name: topicName });
+    } catch (e) {
+        if (btn) btn.disabled = false;
+        input.disabled = false;
+        return;
+    }
+
+    // 3. 切换到专题
+    await selectTopic(topic.id, topic.name);
+
+    // 4. 把问题填入主输入框并发送（attachedImages/Files 已在全局，askQuestion 会直接使用）
+    const mainInput = document.getElementById('questionInput');
+    if (mainInput) {
+        mainInput.value = question;
+        await askQuestion();
+    }
+}
+
+function showMainEmptyState() {
+    const msgs = document.getElementById('chatMessages');
+    msgs.innerHTML = `<div class="greeting-state" id="greetingState"></div>`;
+    renderGreeting();
 }
 
 async function selectTopic(id, name) {
@@ -1621,7 +2215,8 @@ function buildMessageGroupHTML(n) {
                 </button>
                 <button class="action-btn btn-extend" onclick="continueExtend(this)"
                         data-node-id="${n.id}"
-                        data-question="${escapeHtml(n.question).slice(0,200)}">
+                        data-question="${escapeHtml(n.question).slice(0,200)}"
+                        data-answer="${escapeHtml(n.answer).slice(0,300)}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/><line x1="4" y1="12" x2="15" y2="12"/></svg>
                     继续延伸
                 </button>
@@ -1642,12 +2237,17 @@ function renderMainChat() {
 }
 
 // ═══════════════════════ STREAMING ASK ═══════════════════════
-async function streamAsk(topicId, question, container, nodesList, onDone, imageUrl = null) {
+async function streamAsk(topicId, question, container, nodesList, onDone, imageUrls = null) {
+    // Normalise: accept string (legacy) or array
+    const imgArray = imageUrls
+        ? (Array.isArray(imageUrls) ? imageUrls : [imageUrls])
+        : [];
+
     if (container.querySelector('.empty-state')) container.innerHTML = '';
 
     const msgId = 'msg-' + Date.now();
-    const imgHtml = imageUrl
-        ? `<img src="${imageUrl}" class="msg-image" alt="图片" onclick="openLightbox(this.src)"><br>`
+    const imgHtml = imgArray.length
+        ? imgArray.map(u => `<img src="${u}" class="msg-image" alt="图片" onclick="openLightbox(this.src)">`).join('') + '<br>'
         : '';
     container.insertAdjacentHTML('beforeend', `
         <div class="message-group" id="${msgId}">
@@ -1679,7 +2279,8 @@ async function streamAsk(topicId, question, container, nodesList, onDone, imageU
 
     try {
         const payload = { topic_id: topicId, question, node_type: 'question', response_length: responseLength };
-        if (imageUrl) payload.image_data_url = imageUrl;
+        if (imgArray.length === 1) payload.image_data_url = imgArray[0];
+        if (imgArray.length > 1)  payload.image_data_urls = imgArray;
         const resp = await fetch('/api/ask/stream', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1741,7 +2342,8 @@ async function streamAsk(topicId, question, container, nodesList, onDone, imageU
                             </button>
                             <button class="action-btn btn-extend" onclick="continueExtend(this)"
                                     data-node-id="${data.node.id}"
-                                    data-question="${escapeHtml(question).slice(0,200)}">
+                                    data-question="${escapeHtml(question).slice(0,200)}"
+                                    data-answer="${escapeHtml(rawAnswer).slice(0,300)}">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/><line x1="4" y1="12" x2="15" y2="12"/></svg>
                                 继续延伸
                             </button>
@@ -1768,22 +2370,27 @@ async function askQuestion() {
     if (isAskingMain) return;
     const input = document.getElementById('questionInput');
     let question = input.value.trim();
-    if ((!question && !attachedImageUrl) || !currentTopicId) return;
+    if ((!question && attachedImages.length === 0) || !currentTopicId) return;
 
     // A new main-panel question supersedes the current child sub-topic
     closeSubPanel();
-    if (!question) question = '请描述一下这张图片中的内容。';
+    if (!question) question = '请描述一下这些图片中的内容。';
 
-    if (attachedFileText) {
-        question = `[请根据以下文件内容回答我的问题]\n文件名: ${attachedFileName}\n\n${attachedFileText}\n\n---\n我的问题: ${question}`;
+    // Combine all file texts into the question context
+    if (attachedFiles.length > 0) {
+        const fileCtx = attachedFiles
+            .map(f => `[文件: ${f.name}]\n${f.text}`)
+            .join('\n\n---\n\n');
+        question = `[请根据以下文件内容回答我的问题]\n\n${fileCtx}\n\n---\n我的问题: ${question}`;
     }
 
-    const imgUrl = attachedImageUrl;
+    const imgUrls = attachedImages.map(i => i.url);
     input.value = ''; input.style.height = 'auto';
-    removeFile();
-    removeImage();
+    // Clear attachments
+    attachedImages = []; attachedFiles = [];
+    renderAttachments();
     isAskingMain = true;
-    await streamAsk(currentTopicId, question, document.getElementById('chatMessages'), currentNodes, null, imgUrl);
+    await streamAsk(currentTopicId, question, document.getElementById('chatMessages'), currentNodes, null, imgUrls.length ? imgUrls : null);
     isAskingMain = false;
 }
 
@@ -1908,6 +2515,7 @@ async function deepDiveSelected() {
 async function continueExtend(btn) {
     const nodeId   = parseInt(btn.dataset.nodeId);
     const question = btn.dataset.question || '';
+    const answer   = btn.dataset.answer   || '';
     if (!nodeId || !currentTopicId) return;
 
     btn.classList.add('loading');
@@ -1916,13 +2524,15 @@ async function continueExtend(btn) {
     btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> 创建中…`;
 
     try {
-        // Generate concise sub-topic title from the parent question
+        // Use the answer text for title (it contains the actual analyzed content),
+        // fallback to question text if answer is empty
+        const titleSource = answer.trim() || question;
         let subName;
         try {
-            const r = await api('/api/generate-title', 'POST', { text: question });
-            subName = r.title || question.slice(0, 15);
+            const r = await api('/api/generate-title', 'POST', { text: titleSource });
+            subName = r.title || titleSource.slice(0, 15);
         } catch {
-            subName = question.slice(0, 15);
+            subName = titleSource.slice(0, 15);
         }
 
         // Create child sub-topic under the current topic, anchored to this node
@@ -2010,8 +2620,7 @@ function initDragDrop() {
         document.getElementById('dropOverlay').classList.remove('active');
         const files = e.dataTransfer.files;
         if (files.length === 0) return;
-        // Process first file (could extend to multiple later)
-        handleDroppedFile(files[0]);
+        Array.from(files).forEach(handleDroppedFile);
     });
 }
 
@@ -2021,16 +2630,11 @@ function handleDroppedFile(file) {
                   ['text/plain', 'text/markdown', 'application/pdf'].includes(file.type);
 
     if (isImage) {
+        if (file.size > 20 * 1024 * 1024) { alert(`图片 "${file.name}" 超过 20MB，已跳过`); return; }
         const reader = new FileReader();
         reader.onload = e => {
-            attachedImageUrl  = e.target.result;
-            attachedImageName = file.name;
-            document.getElementById('imgPreviewThumb').src = attachedImageUrl;
-            document.getElementById('imgPreviewName').textContent =
-                file.name.length > 14 ? file.name.slice(0, 12) + '…' : file.name;
-            document.getElementById('imgPreviewBadge').style.display = 'flex';
-            document.getElementById('imgUploadBtn').classList.add('active-file');
-            // Focus input so user can type a question
+            attachedImages.push({ url: e.target.result, name: file.name });
+            renderAttachments();
             document.getElementById('questionInput').focus();
         };
         reader.readAsDataURL(file);
@@ -2038,23 +2642,20 @@ function handleDroppedFile(file) {
     }
 
     if (isDoc) {
-        const badge = document.getElementById('fileBadge');
-        const nameEl = document.getElementById('fileNameLabel');
-        nameEl.textContent = '上传中…';
-        badge.style.display = 'flex';
+        const idx = attachedFiles.push({ name: file.name + ' …', text: '' }) - 1;
+        renderAttachments();
         const formData = new FormData();
         formData.append('file', file);
         fetch('/api/upload', { method: 'POST', body: formData })
             .then(r => r.json())
             .then(data => {
-                attachedFileText = data.text;
-                attachedFileName = data.filename;
-                nameEl.textContent = data.filename.length > 16 ? data.filename.slice(0, 14) + '…' : data.filename;
-                document.getElementById('attachBtn').classList.add('active-file');
+                attachedFiles[idx] = { name: data.filename, text: data.text };
+                renderAttachments();
                 document.getElementById('questionInput').focus();
             })
             .catch(err => {
-                badge.style.display = 'none';
+                attachedFiles.splice(idx, 1);
+                renderAttachments();
                 alert('文件解析失败: ' + err.message);
             });
         return;
@@ -2063,42 +2664,68 @@ function handleDroppedFile(file) {
     // Fallback: try reading as plain text
     const reader = new FileReader();
     reader.onload = e => {
-        attachedFileText = e.target.result;
-        attachedFileName = file.name;
-        document.getElementById('fileNameLabel').textContent =
-            file.name.length > 16 ? file.name.slice(0, 14) + '…' : file.name;
-        document.getElementById('fileBadge').style.display = 'flex';
-        document.getElementById('attachBtn').classList.add('active-file');
+        attachedFiles.push({ name: file.name, text: e.target.result });
+        renderAttachments();
         document.getElementById('questionInput').focus();
     };
     reader.onerror = () => alert('不支持的文件格式，请上传图片或 PDF / TXT / MD 文档。');
     reader.readAsText(file);
 }
 
-// ═══════════════════════ IMAGE UPLOAD ═══════════════════════
-function handleImageSelect(input) {
-    const file = input.files[0];
-    if (!file) return;
-    if (file.size > 20 * 1024 * 1024) { alert('图片大小不能超过 20MB'); input.value = ''; return; }
+// ═══════════════════════ ATTACHMENTS ═══════════════════════
 
-    const reader = new FileReader();
-    reader.onload = e => {
-        attachedImageUrl  = e.target.result;
-        attachedImageName = file.name;
-        document.getElementById('imgPreviewThumb').src = attachedImageUrl;
-        document.getElementById('imgPreviewName').textContent = file.name.length > 14 ? file.name.slice(0,12)+'…' : file.name;
-        document.getElementById('imgPreviewBadge').style.display = 'flex';
-        document.getElementById('imgUploadBtn').classList.add('active-file');
-    };
-    reader.readAsDataURL(file);
-    input.value = '';
+function renderAttachments() {
+    // Render into whichever row is currently visible
+    const rows = ['attachmentsRow', 'homeAttachmentsRow']
+        .map(id => document.getElementById(id)).filter(Boolean);
+    rows.forEach(row => {
+        row.innerHTML = '';
+        attachedImages.forEach((img, i) => {
+            const el = document.createElement('div');
+            el.className = 'img-preview-badge';
+            el.innerHTML = `<img src="${escapeHtml(img.url)}" alt="预览"><span>${escapeHtml(img.name.length > 12 ? img.name.slice(0,11)+'…' : img.name)}</span><button class="file-remove" onclick="removeImage(${i})" title="移除">×</button>`;
+            row.appendChild(el);
+        });
+        attachedFiles.forEach((f, i) => {
+            const el = document.createElement('div');
+            el.className = 'file-badge';
+            el.innerHTML = `<span class="file-badge-name">${escapeHtml(f.name.length > 15 ? f.name.slice(0,14)+'…' : f.name)}</span><button class="file-remove" onclick="removeFile(${i})" title="移除">×</button>`;
+            row.appendChild(el);
+        });
+    });
+    document.getElementById('imgUploadBtn')?.classList.toggle('active-file', attachedImages.length > 0);
+    document.getElementById('attachBtn')?.classList.toggle('active-file', attachedFiles.length > 0);
 }
 
-function removeImage() {
-    attachedImageUrl  = null;
-    attachedImageName = null;
-    document.getElementById('imgPreviewBadge').style.display = 'none';
-    document.getElementById('imgUploadBtn').classList.remove('active-file');
+function removeImage(i) {
+    attachedImages.splice(i, 1);
+    renderAttachments();
+}
+
+function removeFile(i) {
+    attachedFiles.splice(i, 1);
+    renderAttachments();
+}
+
+// ═══════════════════════ IMAGE UPLOAD ═══════════════════════
+function handleImageSelect(input) {
+    _processImageFiles(input, 'questionInput');
+}
+function handleHomeImageSelect(input) {
+    _processImageFiles(input, 'homeInput');
+}
+function _processImageFiles(input, focusId) {
+    Array.from(input.files).forEach(file => {
+        if (file.size > 20 * 1024 * 1024) { alert(`图片 "${file.name}" 超过 20MB，已跳过`); return; }
+        const reader = new FileReader();
+        reader.onload = e => {
+            attachedImages.push({ url: e.target.result, name: file.name });
+            renderAttachments();
+            document.getElementById(focusId)?.focus();
+        };
+        reader.readAsDataURL(file);
+    });
+    input.value = '';
 }
 
 function openLightbox(src) {
@@ -2111,58 +2738,74 @@ function closeLightbox() {
 
 // ═══════════════════════ FILE UPLOAD ═══════════════════════
 async function handleFileSelect(input) {
-    const file = input.files[0];
-    if (!file) return;
-    const attachBtn = document.getElementById('attachBtn');
-    attachBtn.classList.add('active-file');
-
-    try {
-        const formData = new FormData();
-        formData.append('file', file);
-        const res = await fetch('/api/upload', { method: 'POST', body: formData });
-        if (!res.ok) throw new Error(await res.text());
-        const data = await res.json();
-        attachedFileText = data.text;
-        attachedFileName = data.filename;
-        document.getElementById('fileNameLabel').textContent = data.filename;
-        document.getElementById('fileBadge').style.display = 'flex';
-    } catch (e) {
-        alert('文件上传失败: ' + e.message);
-        attachBtn.classList.remove('active-file');
-    }
-    input.value = '';
+    await _processDocFiles(input, 'questionInput');
 }
-
-function removeFile() {
-    attachedFileText = null;
-    attachedFileName = null;
-    document.getElementById('fileBadge').style.display = 'none';
-    document.getElementById('attachBtn').classList.remove('active-file');
+async function handleHomeFileSelect(input) {
+    await _processDocFiles(input, 'homeInput');
+}
+async function _processDocFiles(input, focusId) {
+    const files = Array.from(input.files);
+    input.value = '';
+    for (const file of files) {
+        const idx = attachedFiles.push({ name: file.name + ' …', text: '' }) - 1;
+        renderAttachments();
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            const res = await fetch('/api/upload', { method: 'POST', body: formData });
+            if (!res.ok) throw new Error(await res.text());
+            const data = await res.json();
+            attachedFiles[idx] = { name: data.filename, text: data.text };
+        } catch (e) {
+            attachedFiles.splice(idx, 1);
+            alert(`文件 "${file.name}" 上传失败: ${e.message}`);
+        }
+        renderAttachments();
+    }
+    document.getElementById(focusId)?.focus();
 }
 
 // ═══════════════════════ VOICE INPUT ═══════════════════════
+let _voiceTargetInput = 'questionInput'; // which textarea to fill after transcription
+
 async function toggleVoice() {
-    if (isRecording) {
-        stopVoice();
-    } else {
-        await startVoice();
+    _voiceTargetInput = 'questionInput';
+    if (isRecording) stopVoice(); else await startVoice('voiceBtn');
+}
+async function toggleHomeVoice() {
+    _voiceTargetInput = 'homeInput';
+    if (isRecording) stopVoice(); else await startVoice('homeVoiceBtn');
+}
+
+function _setRipple(wrapId, on) {
+    const wrap = document.getElementById(wrapId);
+    if (!wrap) return;
+    // Remove existing rings
+    wrap.querySelectorAll('.ripple-ring').forEach(r => r.remove());
+    if (on) {
+        for (let i = 0; i < 3; i++) {
+            const ring = document.createElement('span');
+            ring.className = 'ripple-ring';
+            wrap.insertBefore(ring, wrap.firstChild);
+        }
     }
 }
 
-async function startVoice() {
+async function startVoice(btnId = 'voiceBtn') {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-            ? 'audio/webm;codecs=opus'
-            : 'audio/webm';
+            ? 'audio/webm;codecs=opus' : 'audio/webm';
         mediaRecorder = new MediaRecorder(stream, { mimeType });
         audioChunks = [];
         mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
         mediaRecorder.onstop = sendAudioForTranscription;
         mediaRecorder.start();
         isRecording = true;
-        document.getElementById('voiceBtn').classList.add('recording');
-        document.getElementById('voiceBtn').title = '点击停止录音';
+        document.getElementById(btnId)?.classList.add('recording');
+        document.getElementById(btnId)?.setAttribute('title', '点击停止录音');
+        // Start ripple on home voice button
+        if (btnId === 'homeVoiceBtn') _setRipple('homeVoiceWrap', true);
     } catch (e) {
         alert('无法访问麦克风: ' + e.message);
     }
@@ -2174,28 +2817,36 @@ function stopVoice() {
         mediaRecorder.stream.getTracks().forEach(t => t.stop());
     }
     isRecording = false;
-    document.getElementById('voiceBtn').classList.remove('recording');
-    document.getElementById('voiceBtn').title = '语音输入';
+    ['voiceBtn', 'homeVoiceBtn'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) { btn.classList.remove('recording'); btn.title = '语音输入'; }
+    });
+    _setRipple('homeVoiceWrap', false);
 }
 
 async function sendAudioForTranscription() {
     const blob = new Blob(audioChunks, { type: 'audio/webm' });
     const formData = new FormData();
     formData.append('file', blob, 'recording.webm');
-    const voiceBtn = document.getElementById('voiceBtn');
-    voiceBtn.style.opacity = '0.5';
+    const activeBtn = document.getElementById(
+        _voiceTargetInput === 'homeInput' ? 'homeVoiceBtn' : 'voiceBtn'
+    );
+    if (activeBtn) activeBtn.style.opacity = '0.5';
     try {
         const res = await fetch('/api/transcribe', { method: 'POST', body: formData });
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
-        const ta = document.getElementById('questionInput');
-        ta.value += (ta.value ? ' ' : '') + data.text;
-        ta.dispatchEvent(new Event('input'));
-        ta.focus();
+        const ta = document.getElementById(_voiceTargetInput);
+        if (ta) {
+            ta.value += (ta.value ? ' ' : '') + data.text;
+            ta.dispatchEvent(new Event('input'));
+            if (_voiceTargetInput === 'homeInput') autoResizeHomeInput(ta);
+            ta.focus();
+        }
     } catch (e) {
         alert('语音识别失败: ' + e.message);
     } finally {
-        voiceBtn.style.opacity = '1';
+        if (activeBtn) activeBtn.style.opacity = '1';
     }
 }
 
@@ -2585,6 +3236,62 @@ async function renderTree() {
             const max = d.data._type === 'root' ? 12 : d.data._type === 'subtopic' ? 11 : 12;
             return lbl.length > max ? lbl.slice(0, max) + '…' : lbl;
         });
+
+    // ── Delete button (shown on hover, hidden for root nodes) ──
+    const delBtn = node.filter(d => d.data._type !== 'root')
+        .append('g')
+        .attr('class', 'tree-del-btn')
+        .attr('transform', d => `translate(${NW(d)/2 - 8}, ${-NH(d)/2 - 8})`)
+        .style('opacity', 0)
+        .style('cursor', 'pointer')
+        .on('click', function(e, d) {
+            e.stopPropagation();
+            const isNode = d.data._type !== 'subtopic';
+            const label = d.data._label || '此节点';
+            const msg = isNode
+                ? `删除「${label}」及其所有子节点？此操作不可撤销。`
+                : `删除子专题「${label}」及其所有内容？此操作不可撤销。`;
+            if (!confirm(msg)) return;
+            const deleteId = isNode ? d.data.id : null;
+            const deleteTopicId = d.data._topicId;
+            if (isNode && deleteId) {
+                api(`/api/nodes/${deleteId}`, 'DELETE').then(() => {
+                    renderTree();
+                    if (currentNodes) {
+                        currentNodes = currentNodes.filter(n => n.id !== deleteId);
+                    }
+                });
+            } else if (!isNode && deleteTopicId) {
+                api(`/api/topics/${deleteTopicId}`, 'DELETE').then(() => {
+                    loadTopics();
+                    renderTree();
+                });
+            }
+        });
+
+    delBtn.append('circle')
+        .attr('r', 8)
+        .attr('fill', 'rgba(248,113,113,0.9)')
+        .attr('stroke', 'rgba(200,50,50,0.5)')
+        .attr('stroke-width', 1);
+
+    delBtn.append('text')
+        .attr('text-anchor', 'middle')
+        .attr('dominant-baseline', 'middle')
+        .attr('font-size', 11)
+        .attr('font-weight', 700)
+        .attr('fill', 'white')
+        .attr('pointer-events', 'none')
+        .text('×');
+
+    // Show/hide delete button on node hover
+    node.filter(d => d.data._type !== 'root')
+        .on('mouseenter', function() {
+            d3.select(this).select('.tree-del-btn').transition().duration(120).style('opacity', 1);
+        })
+        .on('mouseleave', function() {
+            d3.select(this).select('.tree-del-btn').transition().duration(180).style('opacity', 0);
+        });
 }
 
 let selectedNodeTopicId = null;
@@ -2597,6 +3304,21 @@ function showNodeDetail(nd) {
     document.getElementById('nodeDetail').style.display = 'block';
     document.getElementById('overlay').style.display = 'block';
     renderLatex(document.getElementById('nodeDetailAnswer'));
+}
+
+async function deleteCurrentNode() {
+    if (!selectedNodeId) return;
+    const q = document.getElementById('nodeDetailQuestion').textContent || '此节点';
+    if (!confirm(`删除「${q}」及其所有子节点？此操作不可撤销。`)) return;
+    await api(`/api/nodes/${selectedNodeId}`, 'DELETE');
+    closeModals();
+    // Refresh node list and re-render chat + tree
+    if (currentTopicId) {
+        const data = await api(`/api/topics/${currentTopicId}/tree`);
+        currentNodes = data.nodes;
+        renderMainChat();
+    }
+    renderTree();
 }
 
 // ═══════════════════════ RAG SEARCH ═══════════════════════
@@ -2752,6 +3474,8 @@ function closeModals() {
 // ═══════════════════════ INIT ═══════════════════════
 loadTopics();
 initDragDrop();
+renderGreeting();
+renderProfile();
 </script>
 </body>
 </html>

@@ -1,9 +1,24 @@
 """RAG module using ChromaDB for vector storage and retrieval."""
 import os
+import platform as _platform
 import chromadb
 from chromadb.config import Settings
 
-CHROMA_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "chroma_db")
+
+def _default_data_dir() -> str:
+    system = _platform.system()
+    if system == "Windows":
+        base = os.environ.get("APPDATA") or os.path.expanduser("~")
+        return os.path.join(base, "Studorge", "data")
+    elif system == "Darwin":
+        return os.path.join(os.path.expanduser("~"), "Library", "Application Support", "Studorge", "data")
+    else:
+        xdg = os.environ.get("XDG_DATA_HOME") or os.path.join(os.path.expanduser("~"), ".local", "share")
+        return os.path.join(xdg, "Studorge", "data")
+
+
+_DATA_DIR = os.environ.get("STUDORGE_DATA_DIR") or _default_data_dir()
+CHROMA_PATH = os.path.join(_DATA_DIR, "chroma_db")
 
 
 def get_chroma_client():
